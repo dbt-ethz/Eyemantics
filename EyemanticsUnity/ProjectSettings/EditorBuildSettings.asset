@@ -11,3 +11,7 @@ EditorBuildSettings:
   m_configObjects:
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: dd0741fdc0077f6458f89b5727690c72,
       type: 2}
+    com.unity.xr.magicleap.magic_leap_settings: {fileID: 11400000, guid: e59321361997cd54db59b99fface7d7f,
+      type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 1682add1be5fd174b86cc8fd1f09cbb5,
+      type: 2}
