@@ -102,13 +102,6 @@ public class CameraRendering : MonoBehaviour
             UpdateJPGTexture(output.Planes[0]);
         }
     }
-    private void SaveTexture(Texture2D image, int resWidth, int resHeight)
-    {
-        byte[] bytes = image.EncodeToPNG();
-        Destroy(image);
-
-        File.WriteAllBytes(Application.dataPath + "/Images/" + Time.time + ".png", bytes);
-    }
     private void UpdateJPGTexture(MLCamera.PlaneInfo imagePlane)
     {
         if (_imageTexture != null)
@@ -123,5 +116,12 @@ public class CameraRendering : MonoBehaviour
             //_screenRendererJPEG.texture = _imageTexture;
             SaveTexture(_imageTexture, captureWidth, captureHeight);
         }
+    }
+    private void SaveTexture(Texture2D image, int resWidth, int resHeight)
+    {
+        byte[] bytes = image.EncodeToPNG();
+        Destroy(image);
+
+        File.WriteAllBytes(Application.dataPath + "/Images/" + Time.time + ".png", bytes);
     }
 }
