@@ -30,7 +30,6 @@ public class CameraRendering : MonoBehaviour
             ImageCapture();
         }
     }
-
     private void ConnectCamera()
     {
         MLCamera.ConnectContext connectContext = MLCamera.ConnectContext.Create();
@@ -124,7 +123,5 @@ public class CameraRendering : MonoBehaviour
             //_screenRendererJPEG.texture = _imageTexture;
             SaveTexture(_imageTexture, captureWidth, captureHeight);
         }
-        
-        
     }
 }
