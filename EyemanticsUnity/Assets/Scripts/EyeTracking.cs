@@ -5,8 +5,11 @@ using UnityEngine.XR.MagicLeap;
 
 public class EyeTracking : MonoBehaviour
 {
+    public GameObject sphere;
+    public float interval = 0.2f;
     private bool permissionGranted = false;
     private readonly MLPermissions.Callbacks permissionCallbacks = new MLPermissions.Callbacks();
+    private float time = 0.0f;
     private void Awake()
     {
         permissionCallbacks.OnPermissionGranted += OnPermissionGranted;
@@ -23,8 +26,13 @@ public class EyeTracking : MonoBehaviour
     }
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Return))
-        {
+        //if (Input.GetKeyDown(KeyCode.Return))
+        //{
+        //    OutputEyeTracking();
+        //}
+        time += Time.deltaTime;
+        if(time >= interval){
+            time = 0;
             OutputEyeTracking();
         }
     }
@@ -49,11 +57,20 @@ public class EyeTracking : MonoBehaviour
         MLResult gazeStateResult = MLGazeRecognition.GetState(out MLGazeRecognition.State state);
         MLResult gazeStaticDataResult = MLGazeRecognition.GetStaticData(out MLGazeRecognition.StaticData data);
 
-        Debug.Log($"MLGazeRecognitionStaticData {gazeStaticDataResult.Result}\n" +
-            $"Vergence {data.Vergence}\n" +
-            $"EyeHeightMax {data.EyeHeightMax}\n" +
-            $"EyeWidthMax {data.EyeWidthMax}\n" +
-            $"MLGazeRecognitionState: {gazeStateResult.Result}\n" +
-            state.ToString());
+        //Debug.Log($"MLGazeRecognitionStaticData {gazeStaticDataResult.Result}\n" +
+        //    $"Vergence {data.Vergence}\n" +
+        //    $"EyeHeightMax {data.EyeHeightMax}\n" +
+        //    $"EyeWidthMax {data.EyeWidthMax}\n" +
+        //    $"MLGazeRecognitionState: {gazeStateResult.Result}\n" +
+        //    state.ToString());
+        if (data.Vergence != null)
+        {
+            UpdateSphere(data.Vergence);
+        }
+        //Debug.Log($"World to screen: {Camera.main.WorldToScreenPoint(data.Vergence.position)}");
+    }
+    private void UpdateSphere(Pose pos)
+    {
+        sphere.transform.position = pos.position;
     }
 }

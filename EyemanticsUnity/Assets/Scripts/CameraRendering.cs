@@ -124,4 +124,8 @@ public class CameraRendering : MonoBehaviour
 
         File.WriteAllBytes(Application.dataPath + "/Images/" + Time.time + ".png", bytes);
     }
+    private void Test()
+    {
+ 
+    }
 }
