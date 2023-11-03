@@ -319,7 +319,6 @@ GameObject:
   m_Component:
   - component: {fileID: 526660104}
   - component: {fileID: 526660105}
-  - component: {fileID: 526660107}
   - component: {fileID: 526660106}
   m_Layer: 0
   m_Name: InputManager
@@ -361,9 +360,10 @@ MonoBehaviour:
     position: {x: 0, y: 0, z: 0}
     rotation: {x: 0, y: 0, z: 0, w: 0}
   pixelPos: {x: 0, y: 0}
-  testOjb: {fileID: 1926581439}
   captureWidth: 4096
   captureHeight: 3072
+  gazeDisplayPrefab: {fileID: 1183379449}
+  gazeInterval: 0.2
 --- !u!114 &526660106
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -378,23 +378,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   imageGazeCapture: {fileID: -7632218428089472437, guid: bb4daeceea261404d9e9069323220d1b,
     type: 3}
---- !u!114 &526660107
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 526660102}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0c5dbd1acfba0194e90182c58a0fa1c1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sphere: {fileID: 1183379449}
-  interval: 0.2
-  gazePoze:
-    position: {x: 0, y: 0, z: 0}
-    rotation: {x: 0, y: 0, z: 0, w: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
