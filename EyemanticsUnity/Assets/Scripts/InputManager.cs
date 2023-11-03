@@ -7,39 +7,30 @@ public class InputManager : MonoBehaviour
 {
     public InputActionReference imageGazeCapture = null;
 
-    private ImageInput imageInput;
-    private GazeInput gazeInput;
+    private ImageGazeInput imageGazeInput;
     void Start()
     {
-        imageInput = GameObject.Find("/InputManager").GetComponent<ImageInput>();
-        gazeInput = GameObject.Find("/InputManager").GetComponent<GazeInput>();
+        imageGazeInput = GameObject.Find("/InputManager").GetComponent<ImageGazeInput>();
     }
     private void Awake()
     {
-        imageGazeCapture.action.started += CaptureImage;
-        imageGazeCapture.action.started += CaptureGaze;
+        imageGazeCapture.action.started += CaptureImageGaze;
     }
     private void OnDestroy()
     {
-        imageGazeCapture.action.started -= CaptureImage;
-        imageGazeCapture.action.started -= CaptureGaze;
+        imageGazeCapture.action.started -= CaptureImageGaze;
     }
 #if UNITY_EDITOR
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Return))
         {
-            imageInput.ImageCapture();
-            gazeInput.OutputGazePos();
+            imageGazeInput.ImageCapture();
         }
     }
 #endif
-    private void CaptureImage(InputAction.CallbackContext context)
+    private void CaptureImageGaze(InputAction.CallbackContext context)
     {
-        imageInput.ImageCapture();
-    }
-    private void CaptureGaze(InputAction.CallbackContext context)
-    {
-        gazeInput.OutputGazePos();
+        imageGazeInput.ImageCapture();
     }
 }

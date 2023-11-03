@@ -6,12 +6,14 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.MagicLeap;
 
-public class ImageInput : MonoBehaviour
+public class ImageGazeInput : MonoBehaviour
 {
     [HideInInspector]
     public byte[] bytes = null;
     [HideInInspector]
     public Pose cameraPos;
+    [HideInInspector]
+    public Vector2 pixelPos;
 
     private Texture2D _imageTexture;
     private MLCamera _camera;
@@ -22,11 +24,72 @@ public class ImageInput : MonoBehaviour
     //Cache the capture configure for later use.
     private MLCamera.CaptureConfig _captureConfig;
 
+    public GameObject gazeDisplayPrefab;
+    public float gazeInterval = 0.2f;
+    private bool permissionGranted = false;
+    private readonly MLPermissions.Callbacks permissionCallbacks = new MLPermissions.Callbacks();
+    private float time = 0.0f;
+    private void Awake()
+    {
+        permissionCallbacks.OnPermissionGranted += OnPermissionGranted;
+        permissionCallbacks.OnPermissionDenied += OnPermissionDenied;
+        permissionCallbacks.OnPermissionDeniedAndDontAskAgain += OnPermissionDenied;
+
+        MLPermissions.RequestPermission(MLPermission.EyeTracking, permissionCallbacks);
+    }
+    private void OnDestroy()
+    {
+        permissionCallbacks.OnPermissionGranted -= OnPermissionGranted;
+        permissionCallbacks.OnPermissionDenied -= OnPermissionDenied;
+        permissionCallbacks.OnPermissionDeniedAndDontAskAgain -= OnPermissionDenied;
+    }
     private void Start()
     {
         ConnectCamera();
     }
+    private void Update()
+    {
 
+        time += Time.deltaTime;
+        if (time >= gazeInterval)
+        {
+            time = 0;
+            EyeTracking();
+        }
+    }
+    private void OnPermissionDenied(string permission)
+    {
+        MLPluginLog.Error($"{permission} denied, test won't function.");
+    }
+    private void OnPermissionGranted(string permission)
+    {
+        permissionGranted = true;
+    }
+    private void EyeTracking()
+    {
+        if (!permissionGranted)
+        {
+            return;
+        }
+
+        MLResult gazeStateResult = MLGazeRecognition.GetState(out MLGazeRecognition.State state);
+        MLResult gazeStaticDataResult = MLGazeRecognition.GetStaticData(out MLGazeRecognition.StaticData data);
+
+        //Debug.Log($"MLGazeRecognitionStaticData {gazeStaticDataResult.Result}\n" +
+        //    $"Vergence {data.Vergence}\n" +
+        //    $"EyeHeightMax {data.EyeHeightMax}\n" +
+        //    $"EyeWidthMax {data.EyeWidthMax}\n" +
+        //    $"MLGazeRecognitionState: {gazeStateResult.Result}\n" +
+        //    state.ToString());
+        if (data.Vergence != null)
+        {
+            UpdateSphere(data.Vergence);
+        }
+    }
+    private void UpdateSphere(Pose pos)
+    {
+        gazeDisplayPrefab.transform.position = pos.position;
+    }
     private void ConnectCamera()
     {
         MLCamera.ConnectContext connectContext = MLCamera.ConnectContext.Create();
@@ -102,6 +165,8 @@ public class ImageInput : MonoBehaviour
         {
             cameraPos.position = new Vector3(cameraTransform[0, 3], cameraTransform[1, 3], cameraTransform[2, 3]);
             cameraPos.rotation = cameraTransform.rotation;
+            pixelPos = ViewportPointFromWorld(extras.Intrinsics.Value, gazeDisplayPrefab.transform.position, cameraPos.position, cameraPos.rotation);
+            Debug.Log(pixelPos);
         }
     }
     private void UpdateJPGTexture(MLCamera.PlaneInfo imagePlane)
@@ -125,5 +190,22 @@ public class ImageInput : MonoBehaviour
 #if UNITY_EDITOR
         File.WriteAllBytes(Application.dataPath + "/Images/" + Time.time + ".png", bytes);
 #endif
+    }
+    private Vector2 ViewportPointFromWorld(MLCamera.IntrinsicCalibrationParameters icp, Vector3 worldPoint, Vector3 cameraPos, Quaternion cameraRotation)
+    {
+        // Step 1: Convert world point to camera space
+        Vector3 pointInCameraSpace = cameraRotation * (worldPoint - cameraPos);
+
+        // Step 2: Project the point onto the image plane using the camera intrinsics
+        if (pointInCameraSpace.z == 0) // Avoid division by zero
+            return new Vector2(-1, -1); // Indicate an error or out-of-bounds
+
+        float x = (pointInCameraSpace.x / pointInCameraSpace.z) * icp.FocalLength.x + icp.PrincipalPoint.x;
+        float y = icp.Height - ((pointInCameraSpace.y / pointInCameraSpace.z) * icp.FocalLength.y + icp.PrincipalPoint.y);
+
+        // Step 3: Convert to viewport coordinates
+        Vector2 viewportPoint = new Vector2(x / icp.Width, y / icp.Height);
+
+        return viewportPoint;
     }
 }

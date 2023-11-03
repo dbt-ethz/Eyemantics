@@ -35,7 +35,6 @@ public class GazeInput : MonoBehaviour
             EyeTracking();
         }
     }
-
     private void OnPermissionDenied(string permission)
     {
         MLPluginLog.Error($"{permission} denied, test won't function.");
@@ -71,8 +70,5 @@ public class GazeInput : MonoBehaviour
     {
         sphere.transform.position = pos.position;
     }
-    public void OutputGazePos()
-    {
-        gazePoze.position = sphere.transform.position;
-    }
+
 }
