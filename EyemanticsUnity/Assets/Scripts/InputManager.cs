@@ -14,11 +14,11 @@ public class InputManager : MonoBehaviour
     }
     private void Awake()
     {
-        imageGazeCapture.action.started += CaptureImageGaze;
+        imageGazeCapture.action.started += CaptureImage;
     }
     private void OnDestroy()
     {
-        imageGazeCapture.action.started -= CaptureImageGaze;
+        imageGazeCapture.action.started -= CaptureImage;
     }
 #if UNITY_EDITOR
     private void Update()
@@ -29,8 +29,9 @@ public class InputManager : MonoBehaviour
         }
     }
 #endif
-    private void CaptureImageGaze(InputAction.CallbackContext context)
+    private void CaptureImage(InputAction.CallbackContext context)
     {
         imageGazeInput.ImageCapture();
     }
+
 }

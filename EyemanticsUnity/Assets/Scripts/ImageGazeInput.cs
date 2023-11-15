@@ -191,7 +191,7 @@ public class ImageGazeInput : MonoBehaviour
         File.WriteAllBytes(Application.dataPath + "/Images/" + Time.time + ".png", bytes);
 #endif
     }
-    private Vector2 ViewportPointFromWorld(MLCamera.IntrinsicCalibrationParameters icp, Vector3 worldPoint, Vector3 cameraPos, Quaternion cameraRotation)
+    public Vector2 ViewportPointFromWorld(MLCamera.IntrinsicCalibrationParameters icp, Vector3 worldPoint, Vector3 cameraPos, Quaternion cameraRotation)
     {
         // Step 1: Convert world point to camera space
         Vector3 pointInCameraSpace = cameraRotation * (worldPoint - cameraPos);
