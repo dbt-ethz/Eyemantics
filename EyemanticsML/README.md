@@ -2,4 +2,6 @@ SAM requires ``python>=3.8``, and ``pytorch>=1.7`` and ``torchvision>=0.8``. For
 
 Afterwards you can intsall SAM ``pip install git+https://github.com/facebookresearch/segment-anything.git``.
 
-Lastly you will also need ``pip install opencv-python``.
+Lastly you will also need ``pip install opencv-python``. 
+
+Afterwards move into the ``./weights`` folder and download the weights according to the instructions.
