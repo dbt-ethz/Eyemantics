@@ -8,12 +8,13 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Linq;
 
 public class TCPCommunication : MonoBehaviour
 {
     // External variables
     public bool communicating = false;
-    public float[] mask;
+    public bool[][] mask;
 
     // Communication thread
     internal Thread mthread;
@@ -25,7 +26,7 @@ public class TCPCommunication : MonoBehaviour
     internal NetworkStream stream = null;
 
     // Dummy variables for current use
-    private byte[] img = File.ReadAllBytes(Application.dataPath + "/Images/world.png");
+    private byte[] img = File.ReadAllBytes(Application.dataPath + "/Images/IMG_7555.jpg");
     private float[] coords = new float[] { 3.11f, 2.23f };
 
     // Start is called before the first frame update
@@ -53,7 +54,10 @@ public class TCPCommunication : MonoBehaviour
         SendData(img);
 
         // Receive mask
+        ReceiveData();
 
+        // Reset communication boolean
+        communicating = false;
     }
 
     void SendData(byte[] image)
@@ -74,7 +78,6 @@ public class TCPCommunication : MonoBehaviour
             stream.Write(pck,0,pck.Length);
         }
 
-
         // Receive response
         byte[] buff = new byte[1024];
         int bytesRead = stream.Read(buff, 0, buff.Length);
@@ -92,6 +95,53 @@ public class TCPCommunication : MonoBehaviour
 
     void ReceiveData()
     {
+        // Receive number rows
+        byte[] buff_rows = new byte[4];
+        int bytesRead = stream.Read(buff_rows, 0, buff_rows.Length);
+        int rows = BitConverter.ToInt32(buff_rows, 0);
+
+        Debug.Log(rows);
+
+        // Receive number cols
+        byte[] buff_cols = new byte[4];
+        bytesRead = stream.Read(buff_cols, 0, buff_cols.Length);
+        int cols = BitConverter.ToInt32(buff_cols, 0);
+
+        Debug.Log(cols);
+
+        // Create List of mask to append easily
+        List<bool[]> maskList = new List<bool[]>();;
+
+        byte[] buff = new byte[cols];
+        bool[] mask_row = new bool[cols];
+
+        // Receive mask row by row and convert to boolean
+        for(int i = 0; i < rows; ++i)
+        {
+            bytesRead = stream.Read(buff, 0, buff.Length);
+            mask_row = buff.Select(b => Convert.ToBoolean(b)).ToArray();
+
+            maskList.Add(mask_row);
+        }
+
+        Debug.Log("Received");
+
+        mask = maskList.ToArray();
+
+        // printMatrix(mask);
+    }
+
+    void printMatrix(bool[][] mat)
+    {
+        for (int i = 0; i < mat.Length; i++)
+        {
+            for (int j = 0; j < mat[0].Length; j++)
+            {
+                Debug.Log(mat[i][j]);
+            }
+            //System.Console.WriteLine();
+            Debug.Log("End of Row");
+        }
 
     }
 
