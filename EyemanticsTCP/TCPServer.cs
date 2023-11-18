@@ -9,19 +9,22 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Linq;
+using System.Net.NetworkInformation;
 
-public class TCPCommunication : MonoBehaviour
+public class TCPServer : MonoBehaviour
 {
     // External variables
     public bool communicating = false;
     public bool[][] mask;
 
     // Communication thread
-    internal Thread mthread;
+    internal Thread connThread;
+    internal Thread commThread;
 
     // TCP variables
     internal string connectionIP = "127.0.0.1";
     internal int port = 4350;
+    internal TcpListener listener;
     internal TcpClient client = new TcpClient();
     internal NetworkStream stream = null;
 
@@ -32,20 +35,31 @@ public class TCPCommunication : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        IPAddress ipadd = IPAddress.Parse(connectionIP);
-        client.Connect(ipadd, port);
+        connectionIP = GetLocalIPAddress();
 
-        stream = client.GetStream();
-
-        ThreadStart ts = new ThreadStart(Communication);
-        mthread = new Thread(ts);
-        mthread.Start();
+        ThreadStart ts = new ThreadStart(Connect);
+        connThread = new Thread(ts);
+        connThread.Start();
     }
 
     // Update is called once per frame
     void Update()
     {
         
+    }
+
+    void Connect()
+    {
+        IPAddress ipadd = IPAddress.Parse(connectionIP);
+        listener = new TcpListener(ipadd, port);
+        listener.Start();
+        client = listener.AcceptTcpClient();
+
+        stream = client.GetStream();
+
+        ThreadStart tc = new ThreadStart(Communication);
+        commThread = new Thread(tc);
+        commThread.Start();
     }
 
     void Communication()
@@ -131,6 +145,20 @@ public class TCPCommunication : MonoBehaviour
         // printMatrix(mask);
     }
 
+    string GetLocalIPAddress()
+    {
+        try
+        {
+            connectionIP = Dns.GetHostEntry(Dns.GetHostName()).AddressList.Last(f => f.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).ToString();
+            return connectionIP;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Error obtaining local IP address: " + e.Message);
+            return null;
+        }
+    }
+
     void printMatrix(bool[][] mat)
     {
         for (int i = 0; i < mat.Length; i++)
@@ -149,5 +177,6 @@ public class TCPCommunication : MonoBehaviour
     {
         stream.Close();
         client.Close();
+        listener.Stop();
     }
 }
