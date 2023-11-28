@@ -57,6 +57,7 @@ public class TCPServer : MonoBehaviour
 
         stream = client.GetStream();
 
+        // TODO: This should be started when image is captured (from CamCapture fct)
         ThreadStart tc = new ThreadStart(Communication);
         commThread = new Thread(tc);
         commThread.Start();
@@ -64,6 +65,9 @@ public class TCPServer : MonoBehaviour
 
     void Communication()
     {
+        // Make sure communication = true set in CamCapture
+        // communicating = true;
+
         // Send image and coordinates
         SendData(img);
 
