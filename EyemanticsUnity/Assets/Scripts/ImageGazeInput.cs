@@ -16,7 +16,7 @@ public class ImageGazeInput : MonoBehaviour
     public Vector2 pixelPos;
 
     private Texture2D _imageTexture;
-    private MLCamera _camera;
+    public MLCamera _camera;
     [SerializeField, Tooltip("Desired width for the camera capture")]
     private int captureWidth = 1280;
     [SerializeField, Tooltip("Desired height for the camera capture")]

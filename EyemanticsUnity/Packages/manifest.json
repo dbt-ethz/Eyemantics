@@ -9,7 +9,7 @@
     }
   ],
   "dependencies": {
-    "com.magicleap.appsim": "file:C:/Users/elisa/MagicLeap/tools/app_sim_unity/v3.7.0.20230919/com.magicleap.appsim.tgz",
+    "com.magicleap.appsim": "file:C:/Users/joram/MagicLeap/tools/app_sim_unity/v3.7.0.20230919/com.magicleap.appsim.tgz",
     "com.magicleap.unitysdk": "1.11.0",
     "com.unity.collab-proxy": "2.0.7",
     "com.unity.ide.rider": "3.0.24",
