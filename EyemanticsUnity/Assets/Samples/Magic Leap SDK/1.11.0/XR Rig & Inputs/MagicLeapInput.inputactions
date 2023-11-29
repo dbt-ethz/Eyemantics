@@ -644,6 +644,17 @@
                     "action": "ImageGazeCapture",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "42c806ba-9c28-4ceb-afb1-a2906a89aca9",
+                    "path": "<MagicLeapController>/triggerButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ImageGazeCapture",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         }

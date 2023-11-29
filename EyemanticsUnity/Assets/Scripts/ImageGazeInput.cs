@@ -5,6 +5,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.MagicLeap;
+using System.Threading;
 
 public class ImageGazeInput : MonoBehaviour
 {
@@ -49,7 +50,6 @@ public class ImageGazeInput : MonoBehaviour
     }
     private void Update()
     {
-
         time += Time.deltaTime;
         if (time >= gazeInterval)
         {
@@ -142,11 +142,13 @@ public class ImageGazeInput : MonoBehaviour
             result = _camera.CaptureImage();
             if (result.IsOk)
             {
-                Debug.Log("capture image!");
+                Debug.Log("image captured!!");
+                PopOutInfo.Instance.AddText("image captured!!");
             }
             else
             {
                 Debug.LogError("Failed to start image capture!");
+                PopOutInfo.Instance.AddText("Failed to start image capture!");
             }
         }
     }
@@ -157,6 +159,7 @@ public class ImageGazeInput : MonoBehaviour
     }
     void RowImageAvailable(MLCamera.CameraOutput output, MLCamera.ResultExtras extras, MLCamera.Metadata metadataHandle)
     {
+
         if (output.Format == MLCamera.OutputFormat.JPEG)
         {
             UpdateJPGTexture(output.Planes[0]);
@@ -169,6 +172,16 @@ public class ImageGazeInput : MonoBehaviour
             pixelPos = new Vector2(captureWidth/2, captureHeight/2);
             //pixelPos = ViewportPointFromWorld(extras.Intrinsics.Value, gazeDisplayPrefab.transform.position, cameraPos.position, cameraPos.rotation);
             Debug.Log(pixelPos);
+        }
+        PopOutInfo.Instance.AddText("Ready to send out img and gaze pos!");
+        // Send Image to PC
+        if (!TCPServer.communicating)
+        {
+            PopOutInfo.Instance.AddText("called tcpserver");
+            TCPServer.communicating = true;
+            ThreadStart tc = new ThreadStart(TCPServer.Communication);
+            TCPServer.commThread = new Thread(tc);
+            TCPServer.commThread.Start();
         }
     }
     private void UpdateJPGTexture(MLCamera.PlaneInfo imagePlane)
