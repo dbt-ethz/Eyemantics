@@ -5,4 +5,4 @@ Afterwards you can install the rest of the requiremnts via ``pip install -r requ
 Lastly move into the ``./weights`` folder and download the weights according to the instructions.
 
 The TCP Client with the SAM model prediction included can then be started via ``python SAM.py``.
-If you have a GPU available, change the specified lin ein ``SAM.py`` in order to drastically speed up the mask generation.
+If you have a GPU available, change the specified line in ``SAM.py`` in order to drastically speed up the mask generation.
