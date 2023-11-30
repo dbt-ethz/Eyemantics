@@ -18,14 +18,6 @@ public class InputManager : MonoBehaviour
     private void Start()
     {
         imageGazeInput = GameObject.Find("/InputManager").GetComponent<ImageGazeInput>();
-        if (imageGazeInput)
-        {
-            PopOutInfo.Instance.AddText("find imagegazeinput");
-        }
-        else
-        {
-            PopOutInfo.Instance.AddText("didnt find imagegazeinput");
-        }
     }
     private void OnDestroy()
     {
