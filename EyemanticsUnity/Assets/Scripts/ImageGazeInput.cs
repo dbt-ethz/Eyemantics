@@ -28,25 +28,28 @@ public class ImageGazeInput : MonoBehaviour
     public GameObject gazeDisplayPrefab;
     public float gazeInterval = 0.2f;
     private bool permissionGranted = false;
-    private readonly MLPermissions.Callbacks permissionCallbacks = new MLPermissions.Callbacks();
+    private readonly MLPermissions.Callbacks camPermissionCallbacks = new MLPermissions.Callbacks();
+    private readonly MLPermissions.Callbacks eyePermissionCallbacks = new MLPermissions.Callbacks();
     private float time = 0.0f;
+    private MLCamera.Identifier _identifier = MLCamera.Identifier.Main;
+    private bool _cameraDeviceAvailable = false;
     private void Awake()
     {
-        permissionCallbacks.OnPermissionGranted += OnPermissionGranted;
-        permissionCallbacks.OnPermissionDenied += OnPermissionDenied;
-        permissionCallbacks.OnPermissionDeniedAndDontAskAgain += OnPermissionDenied;
-
-        MLPermissions.RequestPermission(MLPermission.EyeTracking, permissionCallbacks);
+        camPermissionCallbacks.OnPermissionGranted += OnPermissionGranted;
+        camPermissionCallbacks.OnPermissionDenied += OnPermissionDenied;
+        camPermissionCallbacks.OnPermissionDeniedAndDontAskAgain += OnPermissionDenied;
+        MLPermissions.RequestPermission(MLPermission.Camera, camPermissionCallbacks);
+        MLPermissions.RequestPermission(MLPermission.EyeTracking, eyePermissionCallbacks);
     }
     private void OnDestroy()
     {
-        permissionCallbacks.OnPermissionGranted -= OnPermissionGranted;
-        permissionCallbacks.OnPermissionDenied -= OnPermissionDenied;
-        permissionCallbacks.OnPermissionDeniedAndDontAskAgain -= OnPermissionDenied;
+        camPermissionCallbacks.OnPermissionGranted -= OnPermissionGranted;
+        camPermissionCallbacks.OnPermissionDenied -= OnPermissionDenied;
+        camPermissionCallbacks.OnPermissionDeniedAndDontAskAgain -= OnPermissionDenied;
     }
     private void Start()
     {
-        ConnectCamera();
+        StartCoroutine(EnableMLCamera());
     }
     private void Update()
     {
@@ -59,11 +62,104 @@ public class ImageGazeInput : MonoBehaviour
     }
     private void OnPermissionDenied(string permission)
     {
-        MLPluginLog.Error($"{permission} denied, test won't function.");
+        Debug.Log($"{permission} denied. The example will not function as expected.");
     }
     private void OnPermissionGranted(string permission)
     {
         permissionGranted = true;
+        Debug.Log($"{permission} granted. The example will function as expected.");
+    }
+    private IEnumerator EnableMLCamera()
+    {
+        while (!_cameraDeviceAvailable)
+        {
+            MLResult result = MLCamera.GetDeviceAvailabilityStatus(_identifier, out _cameraDeviceAvailable);
+            if(result.IsOk == false || _cameraDeviceAvailable == false)
+            {
+                yield return new WaitForSeconds(1.0f);
+            }
+            Debug.Log("tring to connnect camera...");
+        }
+        ConnectCamera();
+    }
+    private void ConnectCamera()
+    {
+        if (_cameraDeviceAvailable)
+        {
+            MLCamera.ConnectContext connectContext = MLCamera.ConnectContext.Create();
+            _camera = MLCamera.CreateAndConnect(connectContext);
+            if (_camera != null)
+            {
+                Debug.Log("Camera device connected");
+                ConfigureCameraInput();
+                SetCameraCallbacks();
+            }
+            else
+            {
+                Debug.Log("failed to connect camera");
+            }
+        }
+    }
+    private void ConfigureCameraInput()
+    {
+        //Gets the stream capabilities the selected camera. (Supported capture types, formats and resolutions)
+        MLCamera.StreamCapability[] streamCapabilities = MLCamera.GetImageStreamCapabilitiesForCamera(_camera, MLCamera.CaptureType.Image);
+
+        if (streamCapabilities.Length == 0)
+            return;
+
+        //Set the default capability stream
+        MLCamera.StreamCapability defaultCapability = streamCapabilities[0];
+
+        //Try to get the stream that most closely matches the target width and height
+        if (MLCamera.TryGetBestFitStreamCapabilityFromCollection(streamCapabilities, captureWidth, captureHeight,
+                MLCamera.CaptureType.Image, out MLCamera.StreamCapability selectedCapability))
+        {
+            defaultCapability = selectedCapability;
+        }
+
+        //Initialize a new capture config.
+        _captureConfig = new MLCamera.CaptureConfig();
+        //Set RGBA video as the output
+        MLCamera.OutputFormat outputFormat = MLCamera.OutputFormat.YUV_420_888;
+        //Set the Frame Rate as none for image capturing
+        _captureConfig.CaptureFrameRate = MLCamera.CaptureFrameRate.None;
+        //Initialize a camera stream config.
+        //The Main Camera can support up to two stream configurations
+        _captureConfig.StreamConfigs = new MLCamera.CaptureStreamConfig[1];
+        _captureConfig.StreamConfigs[0] = MLCamera.CaptureStreamConfig.Create(
+            defaultCapability, outputFormat
+        );
+    }
+    private void SetCameraCallbacks()
+    {
+        _camera.OnRawImageAvailable += RowImageAvailable;
+        Debug.Log("set camera call backs");
+    }
+    public void ImageCapture()
+    {
+        MLResult result = _camera.PrepareCapture(_captureConfig, out MLCamera.Metadata metaData);
+        if (result.IsOk)
+        {
+            Debug.Log("first result ok!!");
+            // Trigger auto exposure and auto white balance
+            _camera.PreCaptureAEAWB();
+            result = _camera.CaptureImage();
+            if (result.IsOk)
+            {
+                Debug.Log("image captured!!");
+                //PopOutInfo.Instance.AddText("image captured!!");
+            }
+            else
+            {
+                Debug.LogError("Failed to start image capture!");
+                //PopOutInfo.Instance.AddText("Failed to start image capture!");
+            }
+        }
+        else
+        {
+            Debug.Log("first result not ok!!");
+        }
     }
     private void EyeTracking()
     {
@@ -90,88 +186,28 @@ public class ImageGazeInput : MonoBehaviour
     {
         gazeDisplayPrefab.transform.position = pos.position;
     }
-    private void ConnectCamera()
-    {
-        MLCamera.ConnectContext connectContext = MLCamera.ConnectContext.Create();
-        _camera = MLCamera.CreateAndConnect(connectContext);
-        if (_camera != null)
-        {
-            Debug.Log("Camera device connected");
-            ConfigureCameraInput();
-            SetCameraCallbacks();
-        }
-    }
-    private void ConfigureCameraInput()
-    {
-        //Gets the stream capabilities the selected camera. (Supported capture types, formats and resolutions)
-        MLCamera.StreamCapability[] streamCapabilities = MLCamera.GetImageStreamCapabilitiesForCamera(_camera, MLCamera.CaptureType.Image);
-
-        if (streamCapabilities.Length == 0)
-            return;
-
-        //Set the default capability stream
-        MLCamera.StreamCapability defaultCapability = streamCapabilities[0];
-
-        //Try to get the stream that most closely matches the target width and height
-        if (MLCamera.TryGetBestFitStreamCapabilityFromCollection(streamCapabilities, captureWidth, captureHeight,
-                MLCamera.CaptureType.Image, out MLCamera.StreamCapability selectedCapability))
-        {
-            defaultCapability = selectedCapability;
-        }
-
-        //Initialize a new capture config.
-        _captureConfig = new MLCamera.CaptureConfig();
-        //Set RGBA video as the output
-        MLCamera.OutputFormat outputFormat = MLCamera.OutputFormat.JPEG;
-        //Set the Frame Rate as none for image capturing
-        _captureConfig.CaptureFrameRate = MLCamera.CaptureFrameRate.None;
-        //Initialize a camera stream config.
-        //The Main Camera can support up to two stream configurations
-        _captureConfig.StreamConfigs = new MLCamera.CaptureStreamConfig[1];
-        _captureConfig.StreamConfigs[0] = MLCamera.CaptureStreamConfig.Create(
-            defaultCapability, outputFormat
-        );
-    }
-    public void ImageCapture()
-    {
-        MLResult result = _camera.PrepareCapture(_captureConfig, out MLCamera.Metadata metaData);
-        if (result.IsOk)
-        {
-            // Trigger auto exposure and auto white balance
-            _camera.PreCaptureAEAWB();
-            result = _camera.CaptureImage();
-            if (result.IsOk)
-            {
-                Debug.Log("image captured!!");
-                PopOutInfo.Instance.AddText("image captured!!");
-            }
-            else
-            {
-                Debug.LogError("Failed to start image capture!");
-                PopOutInfo.Instance.AddText("Failed to start image capture!");
-            }
-        }
-    }
-    private void SetCameraCallbacks()
-    {
-        _camera.OnRawImageAvailable += RowImageAvailable;
-        Debug.Log("set camera call backs");
-    }
     void RowImageAvailable(MLCamera.CameraOutput output, MLCamera.ResultExtras extras, MLCamera.Metadata metadataHandle)
     {
 
-        if (output.Format == MLCamera.OutputFormat.JPEG)
-        {
-            UpdateJPGTexture(output.Planes[0]);
-        }
-        if(MLCVCamera.GetFramePose(extras.VCamTimestamp, out Matrix4x4 cameraTransform).IsOk)
+        //if (output.Format == MLCamera.OutputFormat.YUV_420_888)
+        //{
+        SaveYUVData(output.Planes[0]);
+        //UpdateJPGTexture(output.Planes[0]);
+        //}
+        MLResult result = MLCVCamera.GetFramePose(extras.VCamTimestamp, out Matrix4x4 cameraTransform);
+        if (result.IsOk)
         {
             cameraPos.position = new Vector3(cameraTransform[0, 3], cameraTransform[1, 3], cameraTransform[2, 3]);
             cameraPos.rotation = cameraTransform.rotation;
             //TODO test viewport point from world function
             pixelPos = new Vector2(captureWidth/2, captureHeight/2);
             //pixelPos = ViewportPointFromWorld(extras.Intrinsics.Value, gazeDisplayPrefab.transform.position, cameraPos.position, cameraPos.rotation);
-            Debug.Log(pixelPos);
+            Debug.Log($"cam position: {cameraPos.position}\ncam rotation: {cameraPos.rotation}");
+            Debug.Log($"pixel pos: {pixelPos}");
+        }
+        else
+        {
+            Debug.Log("failed to receive extrinsic!!");
         }
         PopOutInfo.Instance.AddText("Ready to send out img and gaze pos!");
         // Send Image to PC
@@ -184,28 +220,35 @@ public class ImageGazeInput : MonoBehaviour
             TCPServer.commThread.Start();
         }
     }
-    private void UpdateJPGTexture(MLCamera.PlaneInfo imagePlane)
+    private void SaveYUVData(MLCamera.PlaneInfo imagePlane)
     {
-        if (_imageTexture != null)
-        {
-            Destroy(_imageTexture);
-        }
+        bytes = imagePlane.Data;
+        Debug.Log($"image size: {bytes.Length}");
+    }
+//    private void UpdateJPGTexture(MLCamera.PlaneInfo imagePlane)
+//    {
+//        Debug.Log($"read image plane data: {imagePlane.Data.Length}");
+//        if (_imageTexture != null)
+//        {
+//            Destroy(_imageTexture);
+//        }
 
-        _imageTexture = new Texture2D(8, 8);
-        bool status = _imageTexture.LoadImage(imagePlane.Data);
-        if (status && (_imageTexture.width != 8 && _imageTexture.height != 8))
-        {
-            SaveTexture(_imageTexture, captureWidth, captureHeight);
-        }
-    }
-    private void SaveTexture(Texture2D image, int resWidth, int resHeight)
-    {
-        bytes = image.EncodeToPNG();
-        Destroy(image);
-#if UNITY_EDITOR
-        File.WriteAllBytes(Application.dataPath + "/Images/" + Time.time + ".png", bytes);
-#endif
-    }
+//        _imageTexture = new Texture2D(8, 8);
+//        bool status = _imageTexture.LoadImage(imagePlane.Data);
+//        if (status && (_imageTexture.width != 8 && _imageTexture.height != 8))
+//        {
+//            SaveTexture(_imageTexture, captureWidth, captureHeight);
+//        }
+//    }
+//    private void SaveTexture(Texture2D image, int resWidth, int resHeight)
+//    {
+//        bytes = image.EncodeToPNG();
+//        Destroy(image);
+//        Debug.Log($"image size: {bytes.Length}");
+//#if UNITY_EDITOR
+//        File.WriteAllBytes(Application.dataPath + "/Images/" + Time.time + ".png", bytes);
+//#endif
+//    }
     public Vector2 ViewportPointFromWorld(MLCamera.IntrinsicCalibrationParameters icp, Vector3 worldPoint, Vector3 cameraPos, Quaternion cameraRotation)
     {
         // Step 1: Convert world point to camera space

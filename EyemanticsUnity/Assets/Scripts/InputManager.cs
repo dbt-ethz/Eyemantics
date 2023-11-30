@@ -5,30 +5,31 @@ using UnityEngine.InputSystem;
 
 public class InputManager : MonoBehaviour
 {
-    public InputActionReference imageGazeCapture = null;
-
-    private float time = 0.0f;
-    private float gazeInterval = 20f;
-
     private static ImageGazeInput imageGazeInput;
     private MagicLeapInputs mlInputs;
     private MagicLeapInputs.ControllerActions controllerActions;
-    void Start()
-    {
-        imageGazeInput = GameObject.Find("/InputManager").GetComponent<ImageGazeInput>();
-    }
     private void Awake()
     {
-        //imageGazeCapture.action.started += triggerPress;
         mlInputs = new MagicLeapInputs();
         mlInputs.Enable();
         controllerActions = new MagicLeapInputs.ControllerActions(mlInputs);
-
         controllerActions.Trigger.performed += triggerPress;
+    }
+    private void Start()
+    {
+        imageGazeInput = GameObject.Find("/InputManager").GetComponent<ImageGazeInput>();
+        if (imageGazeInput)
+        {
+            PopOutInfo.Instance.AddText("find imagegazeinput");
+        }
+        else
+        {
+            PopOutInfo.Instance.AddText("didnt find imagegazeinput");
+        }
     }
     private void OnDestroy()
     {
-        //imageGazeCapture.action.started -= triggerPress;
+        controllerActions.Trigger.performed -= triggerPress;
     }
 
     private void Update()
@@ -45,5 +46,4 @@ public class InputManager : MonoBehaviour
         PopOutInfo.Instance.AddText("trigger press!!");
         imageGazeInput.ImageCapture();
     }
-
 }

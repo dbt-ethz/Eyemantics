@@ -21,20 +21,20 @@ public class PopOutInfo : MonoBehaviour
             Destroy(Instance.gameObject);
             Instance = this;
         }
-    }
-
-    private void Start()
-    {
         this.text.text = "default text";
+        Application.logMessageReceived += HandleLog;
     }
-
     public void AddText(string newText)
     {
-        if(this.text.text.Length > 200)
+        if(this.text.text.Length > 800)
         {
             this.text.text = "";
         } 
         this.text.text += '\n';
         this.text.text += newText;
+    }
+    private void HandleLog(string message, string stackTrace, LogType type)
+    {
+        this.AddText(message);
     }
 }

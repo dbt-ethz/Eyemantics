@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.magicleap.appsim": {
-      "version": "file:C:/Users/Wen/MagicLeap/tools/app_sim_unity/v3.7.0.20230919/com.magicleap.appsim.tgz",
+      "version": "file:C:/Users/Wenqian/MagicLeap/tools/app_sim_unity/v3.7.0.20230919/com.magicleap.appsim.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
