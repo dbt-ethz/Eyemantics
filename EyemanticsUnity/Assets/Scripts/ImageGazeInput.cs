@@ -192,12 +192,11 @@ public class ImageGazeInput : MonoBehaviour
         {
             cameraPos.position = new Vector3(cameraTransform[0, 3], cameraTransform[1, 3], cameraTransform[2, 3]);
             cameraPos.rotation = cameraTransform.rotation;
-            //TODO test viewport point from world function
-            pixelPos = new Vector2(captureWidth/2, captureHeight/2);
+
             Debug.Log($"cam position: {cameraPos.position}\ncam rotation: {cameraPos.rotation}");
             pixelPos = ViewportPointFromWorld(extras.Intrinsics.Value, gazeDisplayPrefab.transform.position, cameraPos.position, cameraPos.rotation);
             Debug.Log($"image pixel: {captureWidth} * {captureHeight}");
-            Debug.Log($"gaz pos 2D: {pixelPos}");
+            Debug.Log($"gaze pos 2D: {pixelPos}");
         }
         else
         {
