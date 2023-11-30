@@ -102,34 +102,24 @@ public class ImageGazeInput : MonoBehaviour
     }
     private void ConfigureCameraInput()
     {
-        //Gets the stream capabilities the selected camera. (Supported capture types, formats and resolutions)
         MLCamera.StreamCapability[] streamCapabilities = MLCamera.GetImageStreamCapabilitiesForCamera(_camera, MLCamera.CaptureType.Image);
 
         if (streamCapabilities.Length == 0)
             return;
 
-        //Set the default capability stream
         MLCamera.StreamCapability defaultCapability = streamCapabilities[0];
 
-        //Try to get the stream that most closely matches the target width and height
         if (MLCamera.TryGetBestFitStreamCapabilityFromCollection(streamCapabilities, captureWidth, captureHeight,
                 MLCamera.CaptureType.Image, out MLCamera.StreamCapability selectedCapability))
         {
             defaultCapability = selectedCapability;
         }
 
-        //Initialize a new capture config.
         _captureConfig = new MLCamera.CaptureConfig();
-        //Set RGBA video as the output
         MLCamera.OutputFormat outputFormat = MLCamera.OutputFormat.YUV_420_888;
-        //Set the Frame Rate as none for image capturing
         _captureConfig.CaptureFrameRate = MLCamera.CaptureFrameRate.None;
-        //Initialize a camera stream config.
-        //The Main Camera can support up to two stream configurations
         _captureConfig.StreamConfigs = new MLCamera.CaptureStreamConfig[1];
-        _captureConfig.StreamConfigs[0] = MLCamera.CaptureStreamConfig.Create(
-            defaultCapability, outputFormat
-        );
+        _captureConfig.StreamConfigs[0] = MLCamera.CaptureStreamConfig.Create( defaultCapability, outputFormat);
     }
     private void SetCameraCallbacks()
     {
@@ -137,6 +127,10 @@ public class ImageGazeInput : MonoBehaviour
     }
     public void ImageCapture()
     {
+        if (!permissionGranted)
+        {
+            return;
+        }
         MLResult result = _camera.PrepareCapture(_captureConfig, out MLCamera.Metadata metaData);
         if (result.IsOk)
         {
