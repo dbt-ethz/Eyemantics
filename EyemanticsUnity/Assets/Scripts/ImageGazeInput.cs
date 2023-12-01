@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.MagicLeap;
 using System.Threading;
+using UnityEngine.Rendering;
 
 public class ImageGazeInput : MonoBehaviour
 {
@@ -33,6 +34,22 @@ public class ImageGazeInput : MonoBehaviour
     private float time = 0.0f;
     private MLCamera.Identifier _identifier = MLCamera.Identifier.Main;
     private bool _cameraDeviceAvailable = false;
+
+    [SerializeField, Tooltip("The UI to show the camera capture in YUV format")]
+    private RawImage _screenRenderYUV = null;
+    [SerializeField, Tooltip("YUV shader")]
+    private Shader _yuv2RgbShader;
+    // the image textures for each channel Y, U, V
+    private Texture2D[] _rawVideoTextureYuv = new Texture2D[3];
+    private byte[] _yChannelBuffer;
+    private byte[] _uChannelBuffer;
+    private byte[] _vChannelBuffer;
+    private static readonly string[] SamplerNamesYuv = new string[] { "_MainTex", "_UTex", "_VTex" };
+    // the texture that will display our fina image
+    private RenderTexture _renderTexture;
+    private Material _yuvMaterial;
+    private CommandBuffer _commandBuffer;
+
     private void Awake()
     {
         camPermissionCallbacks.OnPermissionGranted += OnPermissionGranted;
@@ -123,7 +140,8 @@ public class ImageGazeInput : MonoBehaviour
     }
     private void SetCameraCallbacks()
     {
-        _camera.OnRawImageAvailable += RowImageAvailable;
+        //_camera.OnRawImageAvailable += RowImageAvailable;
+        _camera.OnRawImageAvailable += OnCaptureDataReceived;
     }
     public void ImageCapture()
     {
@@ -218,6 +236,104 @@ public class ImageGazeInput : MonoBehaviour
         bytes = imagePlane.Data;
         Debug.Log($"image size: {bytes.Length}");
     }
+    private void YUVConvert()
+    {
+
+    }
+    private void OnCaptureDataReceived(MLCamera.CameraOutput output, MLCamera.ResultExtras extras, MLCamera.Metadata metadataHandle)
+    {
+        if (output.Format != MLCamera.OutputFormat.YUV_420_888) return;
+        MLCamera.FlipFrameVertically(ref output);
+        InitializeMaterial();
+        UpdateYUVTextureChannel(ref _rawVideoTextureYuv[0], output.Planes[0], SamplerNamesYuv[0], ref _yChannelBuffer);
+        UpdateYUVTextureChannel(ref _rawVideoTextureYuv[1], output.Planes[1], SamplerNamesYuv[1], ref _yChannelBuffer);
+        UpdateYUVTextureChannel(ref _rawVideoTextureYuv[2], output.Planes[2], SamplerNamesYuv[2], ref _yChannelBuffer);
+
+        _yuvMaterial.mainTextureScale = new Vector2(1f / output.Planes[0].PixelStride, 1.0f);
+        //_yuvMaterial.getra
+        //Texture2D texture2d = new Texture2D((int)output.Planes[0].Width, (int)output.Planes[0].Height, RenderTextureFormat.ARGB32, 0);
+        //Graphics.ConvertTexture(_yuvMaterial.mainTexture)
+
+        CombineYUVChannels2RGB(output);
+    }
+    private void InitializeMaterial()
+    {
+        if(_yuv2RgbShader == null)
+        {
+            _yuv2RgbShader = Shader.Find("Unlit/YUV_Camera_Shader");
+            if(_yuv2RgbShader == null)
+            {
+                Debug.LogError("shader not found!");
+                return;
+            }
+        }
+       if(_yuvMaterial == null)
+        {
+            _yuvMaterial = new Material(_yuv2RgbShader);
+        }
+    }
+    private void UpdateYUVTextureChannel(ref Texture2D channelTexture, MLCamera.PlaneInfo imagePlane, string samplerName, ref byte[] newTexureChannel)
+    {
+        int textureWidth = (int)imagePlane.Width;
+        int textureHeight = (int)imagePlane.Height;
+        if(channelTexture == null || channelTexture.width != textureWidth || channelTexture.height != textureHeight)
+        {
+            if (channelTexture != null)
+            {
+                Destroy(channelTexture);
+            }
+            if (imagePlane.PixelStride == 2)
+            {
+                channelTexture = new Texture2D(textureWidth, textureHeight, TextureFormat.RG16, false);
+            }
+            else
+            {
+                channelTexture = new Texture2D(textureWidth, textureHeight, TextureFormat.Alpha8, false);
+            }
+            channelTexture.filterMode = FilterMode.Bilinear;
+            _yuvMaterial.SetTexture(samplerName, channelTexture);
+        }
+        
+        int actualWidth = (int)(textureWidth * imagePlane.PixelStride);
+
+        if(imagePlane.Stride != actualWidth)
+        {
+            int requiredLength = actualWidth * textureHeight;
+            if(newTexureChannel == null || newTexureChannel.Length != requiredLength)
+            {
+                newTexureChannel = new byte[requiredLength];
+            }
+            for (int i = 0; i < textureHeight; i++)
+            {
+                int sourceOffset = (int)(i * imagePlane.Stride);
+                int destOffset = i * actualWidth;
+                Buffer.BlockCopy(imagePlane.Data, sourceOffset, newTexureChannel, destOffset, actualWidth);
+            }
+            channelTexture.LoadRawTextureData(newTexureChannel);
+        }
+        else
+        {
+            channelTexture.LoadRawTextureData(imagePlane.Data);
+        }
+        channelTexture.Apply();
+    }
+    private void CombineYUVChannels2RGB(MLCamera.CameraOutput output)
+    {
+        if (!_renderTexture)
+        {
+            _renderTexture = new RenderTexture((int)output.Planes[0].Width, (int)output.Planes[0].Height, 0, RenderTextureFormat.ARGB32, 0);
+            if(_commandBuffer == null)
+            {
+                _commandBuffer = new CommandBuffer();
+                _commandBuffer.name = "YUV2RGB";
+            }
+            _screenRenderYUV.texture = _renderTexture;
+        }
+        _yuvMaterial.mainTextureScale = new Vector2(1f / output.Planes[0].PixelStride, 1.0f);
+        _commandBuffer.Blit(null, _renderTexture, _yuvMaterial);
+        Graphics.ExecuteCommandBuffer(_commandBuffer);
+        _commandBuffer.Clear();
+    }
 //    private void UpdateJPGTexture(MLCamera.PlaneInfo imagePlane)
 //    {
 //        Debug.Log($"read image plane data: {imagePlane.Data.Length}");
@@ -246,8 +362,6 @@ public class ImageGazeInput : MonoBehaviour
     {
         // Step 1: Convert world point to camera space
         Vector3 pointInCameraSpace = cameraRotation * (worldPoint - cameraPos);
-        //Debug.Log($"world pos: {worldPoint}");
-        //Debug.Log($"cam pos: {pointInCameraSpace}");
         // Step 2: Project the point onto the image plane using the camera intrinsics
         if (pointInCameraSpace.z == 0) // Avoid division by zero
             return new Vector2(-1, -1); // Indicate an error or out-of-bounds
@@ -255,9 +369,7 @@ public class ImageGazeInput : MonoBehaviour
         float x = (pointInCameraSpace.x / pointInCameraSpace.z) * icp.FocalLength.x + icp.PrincipalPoint.x;
         float y = icp.Height - ((pointInCameraSpace.y / pointInCameraSpace.z) * icp.FocalLength.y + icp.PrincipalPoint.y);
         Vector2 viewportPoint = new Vector2(x, y);
-        //Debug.Log($"projecting pos: {viewportPoint}");
-        // Step 3: Convert to viewport coordinates
-        //Vector2 viewportPoint = new Vector2(x / icp.Width, y / icp.Height);
+
         return viewportPoint;
     }
 }
