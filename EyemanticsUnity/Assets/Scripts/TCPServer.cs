@@ -14,6 +14,7 @@ using System.Net.NetworkInformation;
 public class TCPServer : MonoBehaviour
 {
     // External variables
+    public static bool connected = false;
     public static bool communicating = false;
     public static bool[][] mask;
 
@@ -22,10 +23,10 @@ public class TCPServer : MonoBehaviour
     public static Thread commThread;
 
     // TCP variables
-    internal string connectionIP = "127.0.0.1";
-    internal int port = 4350;
-    internal TcpListener listener;
-    internal TcpClient client = new TcpClient();
+    internal static string connectionIP = "127.0.0.1";
+    internal static int port = 4350;
+    internal static TcpListener listener;
+    internal static TcpClient client = new TcpClient();
     internal static NetworkStream stream = null;
 
     // Dummy variables for current use
@@ -35,11 +36,15 @@ public class TCPServer : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        connectionIP = GetLocalIPAddress();
-
-        ThreadStart ts = new ThreadStart(Connect);
-        connThread = new Thread(ts);
-        connThread.Start();
+        if(!connected)
+        {
+            connectionIP = GetLocalIPAddress();
+            
+            ThreadStart ts = new ThreadStart(Connect);
+            connThread = new Thread(ts);
+            connThread.Start();
+        }
+        
 
         imggaze = GameObject.Find("/InputManager").GetComponent<ImageGazeInput>();
     }
@@ -50,13 +55,14 @@ public class TCPServer : MonoBehaviour
         
     }
 
-    void Connect()
+    public static void Connect()
     {
         IPAddress ipadd = IPAddress.Parse(connectionIP);
         listener = new TcpListener(ipadd, port);
         listener.Start();
         client = listener.AcceptTcpClient();
 
+        connected = true;
         stream = client.GetStream();
 
         // TODO: This should be started when image is captured (from CamCapture fct)
@@ -155,7 +161,7 @@ public class TCPServer : MonoBehaviour
         // printMatrix(mask);
     }
 
-    string GetLocalIPAddress()
+    public static string GetLocalIPAddress()
     {
         try
         {
