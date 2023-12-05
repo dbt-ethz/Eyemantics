@@ -11,6 +11,9 @@
 using System;
 using UnityEngine;
 using UnityEngine.XR.MagicLeap;
+using UnityEngine.UI;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace MagicLeap.Examples
 {
@@ -26,8 +29,9 @@ namespace MagicLeap.Examples
             Wireframe,
             Colored,
             PointCloud,
-            Occlusion
         }
+
+        
 
         [SerializeField, Tooltip("The MeshingSubsystemComponent from which to get update on mesh types.")]
         private MeshingSubsystemComponent _meshingSubsystemComponent = null;
@@ -43,6 +47,15 @@ namespace MagicLeap.Examples
 
         [SerializeField, Tooltip("The material to apply for point cloud rendering.")]
         private Material _pointCloudMaterial = null;
+
+        [SerializeField, Tooltip("Class to capture image and gaze point.")]
+        private ImageGazeInput _imageGazeInput = null;
+
+        [SerializeField, Tooltip("Debug Text Box.")]
+        private Text debugTextBox = null;
+
+        // HashSet to store mesh IDs.
+        private HashSet<UnityEngine.XR.MeshId> meshIdSet = new HashSet<UnityEngine.XR.MeshId>();
 
         public RenderMode renderMode
         {
@@ -94,6 +107,7 @@ namespace MagicLeap.Examples
         {
             _meshingSubsystemComponent.meshAdded += HandleOnMeshReady;
             _meshingSubsystemComponent.meshUpdated += HandleOnMeshReady;
+            _meshingSubsystemComponent.meshRemoved += OnMeshDestroyed;
         }
 
         /// <summary>
@@ -103,6 +117,7 @@ namespace MagicLeap.Examples
         {
             _meshingSubsystemComponent.meshAdded -= HandleOnMeshReady;
             _meshingSubsystemComponent.meshUpdated -= HandleOnMeshReady;
+            _meshingSubsystemComponent.meshRemoved -= OnMeshDestroyed;
         }
 
         /// <summary>
@@ -133,9 +148,9 @@ namespace MagicLeap.Examples
                     case RenderMode.PointCloud:
                         _meshingSubsystemComponent.PrefabRenderer.sharedMaterial = _pointCloudMaterial;
                         break;
-                    case RenderMode.Occlusion:
-                        _meshingSubsystemComponent.PrefabRenderer.sharedMaterial = _occlusionMaterial;
-                        break;
+                    //case RenderMode.Occlusion:
+                    //    _meshingSubsystemComponent.PrefabRenderer.sharedMaterial = _occlusionMaterial;
+                    //    break;
                     default:
                         throw new ArgumentOutOfRangeException($"unknown renderMode value: {renderMode}");
                 }
@@ -151,6 +166,8 @@ namespace MagicLeap.Examples
         /// <param name="meshId">Id of the mesh that got added / upated.</param>
         private void HandleOnMeshReady(UnityEngine.XR.MeshId meshId)
         {
+
+            meshIdSet.Add(meshId);
             if (_meshingSubsystemComponent.meshIdToGameObjectMap.TryGetValue(meshId, out var meshGameObject))
             {
                 var mr = meshGameObject.GetComponent<MeshRenderer>();
@@ -159,17 +176,68 @@ namespace MagicLeap.Examples
                     mr.enabled = renderMode != RenderMode.None;
                 }
 
-                //var meshFilter = meshGameObject.GetComponent<MeshFilter>();
-                //if (meshFilter != null)
-                //{
-                //    Vector3[] vertices = meshFilter.mesh.vertices;
 
-                //    foreach (Vector3 vertex in vertices)
-                //    {
-                //        Debug.Log(vertex.ToString());
-                //    }
-                //}
+                if (renderMode == RenderMode.Colored)
+                {
+                    double heightThreshold = 0f;
+                    var meshFilter = meshGameObject.GetComponent<MeshFilter>();
+                    if (meshFilter != null)
+                    {
+                        Vector3[] vertices = meshFilter.mesh.vertices;
+                        Color[] colors = new Color[vertices.Length];
+
+                        Vector2 PrincipalPoint = new Vector2(_imageGazeInput.cameraIntrinsics.PrincipalPoint.x, _imageGazeInput.cameraIntrinsics.PrincipalPoint.x);
+                        Vector2 zeroVec = new Vector2(0f, 0f);
+
+                        for (int i = 0; i < vertices.Length; i++)
+                        {
+
+                            //Vector2 pixelLocation = _imageGazeInput.ViewportPointFromWorld(_imageGazeInput.cameraIntrinsics, vertices[i], _imageGazeInput.cameraPos.position, _imageGazeInput.cameraPos.rotation);
+
+
+
+                            //pixelLocation = pixelLocation - PrincipalPoint;
+
+                            //pixelLocation = pixelLocation.normalized;
+
+                            //float distance = Vector2.Distance(pixelLocation, zeroVec);
+
+                            //distance = Mathf.Min(distance, 1f);
+
+                            //Debug.Log(_imageGazeInput.cameraIntrinsics.ToString()); // Why is this NULL?
+                            float alpha = Mathf.Abs(vertices[i].y);
+                            colors[i] = new Color(alpha, 1f, 0f, alpha);
+
+                            // Check the vertex position and assign a color based on your criteria
+                            // For example, if the vertex is above a certain height, color it red
+                            //if (vertices[i].y > heightThreshold)
+                            //{
+                            //    colors[i] = Color.red;
+                            //    //Debug.Log("Above threshold");
+                            //}
+                            //else
+                            //{
+                            //    colors[i] = Color.blue;
+                            //    //Debug.Log("Below threshold");
+                            //}
+                        }
+
+                         
+                        meshFilter.mesh.colors = colors;
+                    }
+
+                }
+
+
             }
+        }
+
+        // Function to be called by Meshing Subsystem Component when a mesh is destroyed.
+        public void OnMeshDestroyed(UnityEngine.XR.MeshId meshId)
+        {
+
+            meshIdSet.Remove(meshId);
+            //Debug.Log("Mesh Removed with ID " + meshId.ToString());
         }
     }
 }

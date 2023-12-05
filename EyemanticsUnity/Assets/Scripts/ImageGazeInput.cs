@@ -20,6 +20,7 @@ public class ImageGazeInput : MonoBehaviour
     private Texture2D _imageTexture;
     public MLCamera _camera;
     [SerializeField, Tooltip("Desired width for the camera capture")]
+    public MLCamera.IntrinsicCalibrationParameters cameraIntrinsics;
     private int captureWidth = 1280;
     [SerializeField, Tooltip("Desired height for the camera capture")]
     private int captureHeight = 720;
@@ -140,7 +141,7 @@ public class ImageGazeInput : MonoBehaviour
     }
     private void SetCameraCallbacks()
     {
-        //_camera.OnRawImageAvailable += RowImageAvailable;
+        _camera.OnRawImageAvailable += RowImageAvailable;
         _camera.OnRawImageAvailable += OnCaptureDataReceived;
     }
     public void ImageCapture()
@@ -195,7 +196,8 @@ public class ImageGazeInput : MonoBehaviour
     }
     private void UpdateSphere(Pose pos)
     {
-        gazeDisplayPrefab.transform.position = pos.position;
+        Vector3 init_vec = new Vector3(0f, 0f, 1f);
+        gazeDisplayPrefab.transform.position = init_vec;
     }
     void RowImageAvailable(MLCamera.CameraOutput output, MLCamera.ResultExtras extras, MLCamera.Metadata metadataHandle)
     {
@@ -205,21 +207,27 @@ public class ImageGazeInput : MonoBehaviour
         SaveYUVData(output.Planes[0]);
         //UpdateJPGTexture(output.Planes[0]);
         //}
-        MLResult result = MLCVCamera.GetFramePose(extras.VCamTimestamp, out Matrix4x4 cameraTransform);
-        if (result.IsOk)
-        {
-            cameraPos.position = new Vector3(cameraTransform[0, 3], cameraTransform[1, 3], cameraTransform[2, 3]);
-            cameraPos.rotation = cameraTransform.rotation;
+        //MLResult result = MLCVCamera.GetFramePose(extras.VCamTimestamp, out Matrix4x4 cameraTransform);
+        //if (result.IsOk)
+        //{
+
+
+            //cameraPos.position = new Vector3(cameraTransform[0, 3], cameraTransform[1, 3], cameraTransform[2, 3]);
+            //cameraPos.rotation = cameraTransform.rotation;
+
+            cameraPos.position = Camera.main.gameObject.transform.position;
+            cameraPos.rotation = Camera.main.gameObject.transform.rotation;
 
             Debug.Log($"cam position: {cameraPos.position}\ncam rotation: {cameraPos.rotation}");
-            pixelPos = ViewportPointFromWorld(extras.Intrinsics.Value, gazeDisplayPrefab.transform.position, cameraPos.position, cameraPos.rotation);
+            cameraIntrinsics = extras.Intrinsics.Value;
+            pixelPos = ViewportPointFromWorld(cameraIntrinsics, gazeDisplayPrefab.transform.position, cameraPos.position, cameraPos.rotation);
             Debug.Log($"image pixel: {captureWidth} * {captureHeight}");
             Debug.Log($"gaze pos 2D: {pixelPos}");
-        }
-        else
-        {
-            Debug.Log("failed to receive extrinsic!!");
-        }
+        //}
+        //else
+        //{
+        //    Debug.Log("failed to receive extrinsic!!");
+        //}
         PopOutInfo.Instance.AddText("Ready to send out img and gaze pos!");
         // Send Image to PC
         if (!TCPServer.communicating)
@@ -360,16 +368,33 @@ public class ImageGazeInput : MonoBehaviour
 //    }
     public Vector2 ViewportPointFromWorld(MLCamera.IntrinsicCalibrationParameters icp, Vector3 worldPoint, Vector3 cameraPos, Quaternion cameraRotation)
     {
-        // Step 1: Convert world point to camera space
-        Vector3 pointInCameraSpace = cameraRotation * (worldPoint - cameraPos);
+
+        // Step 1: Convert world point to camera space 
+        Vector3 pointInCameraSpace = Quaternion.Inverse(cameraRotation) * (worldPoint - cameraPos);
+
+        Debug.Log($"3D Point in Camera Space: {pointInCameraSpace}");
+
         // Step 2: Project the point onto the image plane using the camera intrinsics
-        if (pointInCameraSpace.z == 0) // Avoid division by zero
+        if (pointInCameraSpace.z <= 0) // Avoid division by zero
             return new Vector2(-1, -1); // Indicate an error or out-of-bounds
 
-        float x = (pointInCameraSpace.x / pointInCameraSpace.z) * icp.FocalLength.x + icp.PrincipalPoint.x;
-        float y = icp.Height - ((pointInCameraSpace.y / pointInCameraSpace.z) * icp.FocalLength.y + icp.PrincipalPoint.y);
-        Vector2 viewportPoint = new Vector2(x, y);
+        // Step 2: Project the camera-space point onto the image plane
+        Vector2 viewportPoint = new Vector2(
+            icp.FocalLength.x * pointInCameraSpace.x / pointInCameraSpace.z + icp.PrincipalPoint.x,
+            icp.Height - ((pointInCameraSpace.y / pointInCameraSpace.z) * icp.FocalLength.y + icp.PrincipalPoint.y)
+        );
+
+
+    Debug.Log($"Camera Resolution: {icp.Width} * {icp.Height}");
 
         return viewportPoint;
+        
+
+
+        //float x = (pointInCameraSpace.x / pointInCameraSpace.z) * icp.FocalLength.x + icp.PrincipalPoint.x;
+        //float y = icp.Height - ((pointInCameraSpace.y / pointInCameraSpace.z) * icp.FocalLength.y + icp.PrincipalPoint.y);
+        //Vector2 viewportPoint = new Vector2(x, y);
+
+        //return viewportPoint;
     }
 }
