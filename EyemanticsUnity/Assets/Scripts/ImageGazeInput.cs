@@ -7,6 +7,8 @@ using UnityEngine.UI;
 using UnityEngine.XR.MagicLeap;
 using System.Threading;
 using UnityEngine.Rendering;
+using System.Text;
+using System.Linq;
 
 public class ImageGazeInput : MonoBehaviour
 {
@@ -35,8 +37,8 @@ public class ImageGazeInput : MonoBehaviour
     private MLCamera.Identifier _identifier = MLCamera.Identifier.Main;
     private bool _cameraDeviceAvailable = false;
 
-    [SerializeField, Tooltip("The UI to show the camera capture in YUV format")]
-    private RawImage _screenRenderYUV = null;
+    //[SerializeField, Tooltip("The UI to show the camera capture in YUV format")]
+    //private RawImage _screenRenderYUV = null;
     [SerializeField, Tooltip("YUV shader")]
     private Shader _yuv2RgbShader;
     // the image textures for each channel Y, U, V
@@ -47,8 +49,10 @@ public class ImageGazeInput : MonoBehaviour
     private static readonly string[] SamplerNamesYuv = new string[] { "_MainTex", "_UTex", "_VTex" };
     // the texture that will display our fina image
     private RenderTexture _renderTexture;
+    private Texture2D _combinedTexture2D;
     private Material _yuvMaterial;
     private CommandBuffer _commandBuffer;
+    private Texture _combinedTexture;
 
     private void Awake()
     {
@@ -236,25 +240,35 @@ public class ImageGazeInput : MonoBehaviour
         bytes = imagePlane.Data;
         Debug.Log($"image size: {bytes.Length}");
     }
-    private void YUVConvert()
-    {
-
-    }
     private void OnCaptureDataReceived(MLCamera.CameraOutput output, MLCamera.ResultExtras extras, MLCamera.Metadata metadataHandle)
     {
         if (output.Format != MLCamera.OutputFormat.YUV_420_888) return;
         MLCamera.FlipFrameVertically(ref output);
         InitializeMaterial();
         UpdateYUVTextureChannel(ref _rawVideoTextureYuv[0], output.Planes[0], SamplerNamesYuv[0], ref _yChannelBuffer);
-        UpdateYUVTextureChannel(ref _rawVideoTextureYuv[1], output.Planes[1], SamplerNamesYuv[1], ref _yChannelBuffer);
-        UpdateYUVTextureChannel(ref _rawVideoTextureYuv[2], output.Planes[2], SamplerNamesYuv[2], ref _yChannelBuffer);
+        UpdateYUVTextureChannel(ref _rawVideoTextureYuv[1], output.Planes[1], SamplerNamesYuv[1], ref _uChannelBuffer);
+        UpdateYUVTextureChannel(ref _rawVideoTextureYuv[2], output.Planes[2], SamplerNamesYuv[2], ref _vChannelBuffer);
 
+        //CombineYUVChannels2RGB(output);
         _yuvMaterial.mainTextureScale = new Vector2(1f / output.Planes[0].PixelStride, 1.0f);
-        //_yuvMaterial.getra
-        //Texture2D texture2d = new Texture2D((int)output.Planes[0].Width, (int)output.Planes[0].Height, RenderTextureFormat.ARGB32, 0);
-        //Graphics.ConvertTexture(_yuvMaterial.mainTexture)
-
-        CombineYUVChannels2RGB(output);
+        _combinedTexture2D = _yuvMaterial.GetTexture("_MainTex") as Texture2D;
+        bytes = _combinedTexture2D.EncodeToPNG();
+        Debug.Log($"image size: {bytes.Length}");
+        string dataString = bytes.Aggregate(new StringBuilder(), (sb, b) => sb.AppendFormat("{0:x2} ", b), sb => sb.AppendFormat("({0})", bytes.Length).ToString());
+        SaveBytesArrayLocal(dataString);
+    }
+    private void SaveBytesArrayLocal(string dataString)
+    {
+        string path = Application.persistentDataPath + "/" + "bytesArray";
+        Debug.Log($"save path: {path}");
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+        }
+        StreamWriter writer = new StreamWriter(path + "/bytes.text");
+        writer.Write(dataString);
+        writer.Flush();
+        writer.Close();
     }
     private void InitializeMaterial()
     {
@@ -322,42 +336,43 @@ public class ImageGazeInput : MonoBehaviour
         if (!_renderTexture)
         {
             _renderTexture = new RenderTexture((int)output.Planes[0].Width, (int)output.Planes[0].Height, 0, RenderTextureFormat.ARGB32, 0);
-            if(_commandBuffer == null)
+            if (_commandBuffer == null)
             {
                 _commandBuffer = new CommandBuffer();
                 _commandBuffer.name = "YUV2RGB";
             }
-            _screenRenderYUV.texture = _renderTexture;
+            //_screenRenderYUV.texture = _renderTexture;
         }
+
         _yuvMaterial.mainTextureScale = new Vector2(1f / output.Planes[0].PixelStride, 1.0f);
         _commandBuffer.Blit(null, _renderTexture, _yuvMaterial);
         Graphics.ExecuteCommandBuffer(_commandBuffer);
         _commandBuffer.Clear();
     }
-//    private void UpdateJPGTexture(MLCamera.PlaneInfo imagePlane)
-//    {
-//        Debug.Log($"read image plane data: {imagePlane.Data.Length}");
-//        if (_imageTexture != null)
-//        {
-//            Destroy(_imageTexture);
-//        }
+    private void UpdateJPGTexture(MLCamera.PlaneInfo imagePlane)
+    {
+        Debug.Log($"read image plane data: {imagePlane.Data.Length}");
+        if (_imageTexture != null)
+        {
+            Destroy(_imageTexture);
+        }
 
-//        _imageTexture = new Texture2D(8, 8);
-//        bool status = _imageTexture.LoadImage(imagePlane.Data);
-//        if (status && (_imageTexture.width != 8 && _imageTexture.height != 8))
-//        {
-//            SaveTexture(_imageTexture, captureWidth, captureHeight);
-//        }
-//    }
-//    private void SaveTexture(Texture2D image, int resWidth, int resHeight)
-//    {
-//        bytes = image.EncodeToPNG();
-//        Destroy(image);
-//        Debug.Log($"image size: {bytes.Length}");
-//#if UNITY_EDITOR
-//        File.WriteAllBytes(Application.dataPath + "/Images/" + Time.time + ".png", bytes);
-//#endif
-//    }
+        _imageTexture = new Texture2D(8, 8);
+        bool status = _imageTexture.LoadImage(imagePlane.Data);
+        if (status && (_imageTexture.width != 8 && _imageTexture.height != 8))
+        {
+            SaveTexture(_imageTexture, captureWidth, captureHeight);
+        }
+    }
+    private void SaveTexture(Texture2D image, int resWidth, int resHeight)
+    {
+        bytes = image.EncodeToPNG();
+        Destroy(image);
+        Debug.Log($"image size: {bytes.Length}");
+#if UNITY_EDITOR
+        File.WriteAllBytes(Application.dataPath + "/Images/" + Time.time + ".png", bytes);
+#endif
+    }
     public Vector2 ViewportPointFromWorld(MLCamera.IntrinsicCalibrationParameters icp, Vector3 worldPoint, Vector3 cameraPos, Quaternion cameraRotation)
     {
         // Step 1: Convert world point to camera space
