@@ -234,6 +234,7 @@ namespace MagicLeap.Examples
         /// <param name="callbackContext"></param>
         private void OnBumperDown(InputAction.CallbackContext callbackContext)
         {
+            Debug.Log("Bumper Down");
             _renderMode = (MeshingVisualizer.RenderMode)((int)(_renderMode + 1) % _renderModeCount);
             _meshingVisualizer.SetRenderers(_renderMode);
         }
