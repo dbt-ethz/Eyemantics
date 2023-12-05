@@ -138,7 +138,8 @@ public class ImageGazeInput : MonoBehaviour
         }
 
         _captureConfig = new MLCamera.CaptureConfig();
-        MLCamera.OutputFormat outputFormat = MLCamera.OutputFormat.YUV_420_888;
+        //MLCamera.OutputFormat outputFormat = MLCamera.OutputFormat.YUV_420_888;
+        MLCamera.OutputFormat outputFormat = MLCamera.OutputFormat.JPEG;
         _captureConfig.CaptureFrameRate = MLCamera.CaptureFrameRate.None;
         _captureConfig.StreamConfigs = new MLCamera.CaptureStreamConfig[1];
         _captureConfig.StreamConfigs[0] = MLCamera.CaptureStreamConfig.Create( defaultCapability, outputFormat);
@@ -146,7 +147,7 @@ public class ImageGazeInput : MonoBehaviour
     private void SetCameraCallbacks()
     {
         _camera.OnRawImageAvailable += RowImageAvailable;
-        _camera.OnRawImageAvailable += OnCaptureDataReceived;
+        //_camera.OnRawImageAvailable += OnCaptureDataReceived;
     }
     public void ImageCapture()
     {
@@ -208,8 +209,8 @@ public class ImageGazeInput : MonoBehaviour
 
         //if (output.Format == MLCamera.OutputFormat.YUV_420_888)
         //{
-        SaveYUVData(output.Planes[0]);
-        //UpdateJPGTexture(output.Planes[0]);
+        //SaveYUVData(output.Planes[0]);
+        UpdateJPGTexture(output.Planes[0]);
         //}
         //MLResult result = MLCVCamera.GetFramePose(extras.VCamTimestamp, out Matrix4x4 cameraTransform);
         //if (result.IsOk)
@@ -225,7 +226,7 @@ public class ImageGazeInput : MonoBehaviour
             Debug.Log($"cam position: {cameraPos.position}\ncam rotation: {cameraPos.rotation}");
             cameraIntrinsics = extras.Intrinsics.Value;
             pixelPos = ViewportPointFromWorld(cameraIntrinsics, gazeDisplayPrefab.transform.position, cameraPos.position, cameraPos.rotation);
-            Debug.Log($"image pixel: {captureWidth} * {captureHeight}");
+            Debug.Log($"image dimention: {captureWidth} * {captureHeight}");
             Debug.Log($"gaze pos 2D: {pixelPos}");
         //}
         //else
@@ -268,7 +269,7 @@ public class ImageGazeInput : MonoBehaviour
     private void SaveBytesArrayLocal(string dataString)
     {
         string path = Application.persistentDataPath + "/" + "bytesArray";
-        Debug.Log($"save path: {path}");
+        Debug.Log($"save to local: {path}");
         if (!Directory.Exists(path))
         {
             Directory.CreateDirectory(path);
@@ -374,11 +375,14 @@ public class ImageGazeInput : MonoBehaviour
     }
     private void SaveTexture(Texture2D image, int resWidth, int resHeight)
     {
-        bytes = image.EncodeToPNG();
+        bytes = image.EncodeToJPG();
         Destroy(image);
-        Debug.Log($"image size: {bytes.Length}");
+        Debug.Log($"save image size: {bytes.Length}");
+        string dataString = bytes.Aggregate(new StringBuilder(), (sb, b) => sb.AppendFormat("{0:x2} ", b), sb => sb.AppendFormat("({0})", bytes.Length).ToString());
+        SaveBytesArrayLocal(dataString);
+
 #if UNITY_EDITOR
-        File.WriteAllBytes(Application.dataPath + "/Images/" + Time.time + ".png", bytes);
+        File.WriteAllBytes(Application.dataPath + "/Images/" + Time.time + ".jpgs", bytes);
 #endif
     }
     public Vector2 ViewportPointFromWorld(MLCamera.IntrinsicCalibrationParameters icp, Vector3 worldPoint, Vector3 cameraPos, Quaternion cameraRotation)
