@@ -10,7 +10,7 @@ from automatic_mask_generator import *
 
 
 def image_to_mask(pedictor: any, input_point: np.ndarray, image: np.ndarray) -> np.ndarray:
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = cv2.cvtColor(image, cv2. cv2.COLOR_BGR2RGB) #test this
     predictor.set_image(image)
     input_label = np.array([1])  # foreground
     mask, _, _ = predictor.predict(
@@ -20,7 +20,7 @@ def image_to_mask(pedictor: any, input_point: np.ndarray, image: np.ndarray) -> 
         )
     return mask
 
-
+print("initializing SAM...")
 sam_checkpoint = "weights/sam_vit_b_01ec64.pth"
 model_type = "vit_b"
 device = "cpu" # "cpu" if no gpu, "cuda" if gpu available
@@ -30,14 +30,15 @@ sam.to(device=device)
 
 predictor = SamPredictor(sam)
 
+#IPaddr = input('Input the MagicLeap device IP\n') 
 
-IPaddr = "127.0.0.1"
+IPaddr = "172.20.10.3" #chnage this
 port = 4350
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     while(True):
         s.connect((IPaddr,port))
-
+        print("connected!")
         while True:
             img_data = b""
 
@@ -59,7 +60,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Decode byte array to cv2 image
             decoded = np.frombuffer(img_data, dtype=np.uint8)
             image = cv2.imdecode(decoded, cv2.IMREAD_COLOR)
-
             # Send Reveive message
             message = bytes("Received", 'utf-8')
             s.sendall(message)
@@ -76,7 +76,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             print(f"received gaze point: {vector}")
 
             print("generating mask...")
-            mask_boolean = path_to_mask(predictor, vector, image)
+            mask_boolean = image_to_mask(predictor, image, vector)
 
             # Send mask back
             print("sending mask back...")
