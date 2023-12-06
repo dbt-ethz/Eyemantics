@@ -132,7 +132,7 @@ namespace MagicLeap.Examples
             mlInputs.Enable();
             controllerActions = new MagicLeapInputs.ControllerActions(mlInputs);
 
-            controllerActions.Trigger.performed += OnTriggerDown;
+            controllerActions.Trigger.performed += InputManager.triggerPress;
             controllerActions.Bumper.performed += OnBumperDown;
             controllerActions.Menu.performed += OnMenuDown;
 
@@ -192,7 +192,7 @@ namespace MagicLeap.Examples
             permissionCallbacks.OnPermissionDenied -= OnPermissionDenied;
             permissionCallbacks.OnPermissionDeniedAndDontAskAgain -= OnPermissionDenied;
 
-            controllerActions.Trigger.performed -= OnTriggerDown;
+            //controllerActions.Trigger.performed -= OnTriggerDown;
             controllerActions.Bumper.performed -= OnBumperDown;
             controllerActions.Menu.performed -= OnMenuDown;
             inputSubsystem.trackingOriginUpdated -= OnTrackingOriginChanged;
@@ -234,6 +234,7 @@ namespace MagicLeap.Examples
         /// <param name="callbackContext"></param>
         private void OnBumperDown(InputAction.CallbackContext callbackContext)
         {
+            Debug.Log("Bumper Down");
             _renderMode = (MeshingVisualizer.RenderMode)((int)(_renderMode + 1) % _renderModeCount);
             _meshingVisualizer.SetRenderers(_renderMode);
         }

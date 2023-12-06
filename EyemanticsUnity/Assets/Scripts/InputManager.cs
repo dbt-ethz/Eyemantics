@@ -5,33 +5,37 @@ using UnityEngine.InputSystem;
 
 public class InputManager : MonoBehaviour
 {
-    public InputActionReference imageGazeCapture = null;
-
-    private ImageGazeInput imageGazeInput;
-    void Start()
+    private static ImageGazeInput imageGazeInput;
+    private MagicLeapInputs mlInputs;
+    private MagicLeapInputs.ControllerActions controllerActions;
+    private void Awake()
+    {
+        mlInputs = new MagicLeapInputs();
+        mlInputs.Enable();
+        controllerActions = new MagicLeapInputs.ControllerActions(mlInputs);
+        controllerActions.Trigger.performed += triggerPress;
+    }
+    private void Start()
     {
         imageGazeInput = GameObject.Find("/InputManager").GetComponent<ImageGazeInput>();
     }
-    private void Awake()
-    {
-        imageGazeCapture.action.started += CaptureImage;
-    }
     private void OnDestroy()
     {
-        imageGazeCapture.action.started -= CaptureImage;
+        controllerActions.Trigger.performed -= triggerPress;
     }
-#if UNITY_EDITOR
+
     private void Update()
     {
+#if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.Return))
         {
             imageGazeInput.ImageCapture();
         }
-    }
 #endif
-    private void CaptureImage(InputAction.CallbackContext context)
+    }
+    public static void triggerPress(InputAction.CallbackContext context)
     {
+        PopOutInfo.Instance.AddText("trigger press!!");
         imageGazeInput.ImageCapture();
     }
-
 }
