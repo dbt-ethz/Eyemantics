@@ -225,6 +225,7 @@ public class ImageGazeInput : MonoBehaviour
 
             Debug.Log($"cam position: {cameraPos.position}\ncam rotation: {cameraPos.rotation}");
             cameraIntrinsics = extras.Intrinsics.Value;
+            Debug.Log($"Camera Resolution: {cameraIntrinsics.Width} * {cameraIntrinsics.Height}");
             pixelPos = ViewportPointFromWorld(cameraIntrinsics, gazeDisplayPrefab.transform.position, cameraPos.position, cameraPos.rotation);
             Debug.Log($"image dimention: {captureWidth} * {captureHeight}");
             Debug.Log($"gaze pos 2D: {pixelPos}");
@@ -391,20 +392,17 @@ public class ImageGazeInput : MonoBehaviour
         // Step 1: Convert world point to camera space 
         Vector3 pointInCameraSpace = Quaternion.Inverse(cameraRotation) * (worldPoint - cameraPos);
 
-        Debug.Log($"3D Point in Camera Space: {pointInCameraSpace}");
+        //Debug.Log($"3D Point in Camera Space: {pointInCameraSpace}");
 
         // Step 2: Project the point onto the image plane using the camera intrinsics
         if (pointInCameraSpace.z <= 0) // Avoid division by zero
-            return new Vector2(-1, -1); // Indicate an error or out-of-bounds
+            return new Vector2(-1f, -1f); // Indicate an error or out-of-bounds
 
         // Step 2: Project the camera-space point onto the image plane
         Vector2 viewportPoint = new Vector2(
             icp.FocalLength.x * pointInCameraSpace.x / pointInCameraSpace.z + icp.PrincipalPoint.x,
             icp.Height - ((pointInCameraSpace.y / pointInCameraSpace.z) * icp.FocalLength.y + icp.PrincipalPoint.y)
         );
-
-
-    Debug.Log($"Camera Resolution: {icp.Width} * {icp.Height}");
 
         return viewportPoint;
         

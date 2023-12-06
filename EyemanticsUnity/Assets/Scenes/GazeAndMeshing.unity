@@ -528,6 +528,8 @@ MonoBehaviour:
   _pointCloudMaterial: {fileID: 2100000, guid: 468ab2539f82086478cbc040da1947d2, type: 2}
   _imageGazeInput: {fileID: 526660105}
   debugTextBox: {fileID: 1033361342}
+  pixelLocationRangeX: {x: -1000, y: 1000}
+  pixelLocationRangeY: {x: -1000, y: 1000}
 --- !u!1 &526660102
 GameObject:
   m_ObjectHideFlags: 0
@@ -582,7 +584,6 @@ MonoBehaviour:
   captureHeight: 3072
   gazeDisplayPrefab: {fileID: 1183379449}
   gazeInterval: 0.2
-  _screenRenderYUV: {fileID: 942509695}
   _yuv2RgbShader: {fileID: 4800000, guid: a5994555198561c4cb8a5354eff85444, type: 3}
 --- !u!114 &526660106
 MonoBehaviour:
@@ -1431,7 +1432,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1772559458}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 6.38}
+  m_LocalPosition: {x: 0, y: 0, z: 6.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

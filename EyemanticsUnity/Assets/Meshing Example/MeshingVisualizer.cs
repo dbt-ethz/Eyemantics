@@ -176,6 +176,7 @@ namespace MagicLeap.Examples
                     mr.enabled = renderMode != RenderMode.None;
                 }
 
+                Vector2 errVec = new Vector2(-1f, -1f);
 
                 if (renderMode == RenderMode.Colored)
                 {
@@ -189,37 +190,40 @@ namespace MagicLeap.Examples
                         Vector2 PrincipalPoint = new Vector2(_imageGazeInput.cameraIntrinsics.PrincipalPoint.x, _imageGazeInput.cameraIntrinsics.PrincipalPoint.x);
                         Vector2 zeroVec = new Vector2(0f, 0f);
 
+                        Color red = new Color(1f, 0f, 0f, 0f);
+                        Color blue = new Color(0f, 0f, 1f, 1f);
+
+                        Vector2 pixelLocationRangeX = new Vector2(-50f, 50f);
+                        Vector2 pixelLocationRangeY = new Vector2(-50f, 50f);
+
+                        //Debug.Log($"Pixel Location X Range: {pixelLocationRangeX}");
+                        //Debug.Log($"Pixel Location Y Range: {pixelLocationRangeY}");
+
+
+
                         for (int i = 0; i < vertices.Length; i++)
                         {
+                            // Initialize Color
+                            colors[i] = blue;
 
-                            //Vector2 pixelLocation = _imageGazeInput.ViewportPointFromWorld(_imageGazeInput.cameraIntrinsics, vertices[i], _imageGazeInput.cameraPos.position, _imageGazeInput.cameraPos.rotation);
+                            Vector2 pixelLocation = _imageGazeInput.ViewportPointFromWorld(_imageGazeInput.cameraIntrinsics, vertices[i], _imageGazeInput.cameraPos.position, _imageGazeInput.cameraPos.rotation);
+
+                            if (pixelLocation != errVec)
+                            {
+                                pixelLocation -= PrincipalPoint;
+                                //pixelLocation -= _imageGazeInput.cameraIntrinsics.PrincipalPoint;
+                                // Check if pixelLocation is within the specified range
+                                if (pixelLocation.x >= pixelLocationRangeX.x && pixelLocation.x <= pixelLocationRangeX.y &&
+                                    pixelLocation.y >= pixelLocationRangeY.x && pixelLocation.y <= pixelLocationRangeY.y)
+                                {
+                                    //Debug.Log(pixelLocation);
+                                    // Add vertex to filteredVertices and corresponding color to filteredColors
+                                    colors[i] = red;
+                                }
+                            }
 
 
 
-                            //pixelLocation = pixelLocation - PrincipalPoint;
-
-                            //pixelLocation = pixelLocation.normalized;
-
-                            //float distance = Vector2.Distance(pixelLocation, zeroVec);
-
-                            //distance = Mathf.Min(distance, 1f);
-
-                            //Debug.Log(_imageGazeInput.cameraIntrinsics.ToString()); // Why is this NULL?
-                            float alpha = Mathf.Abs(vertices[i].y);
-                            colors[i] = new Color(alpha, 1f, 0f, alpha);
-
-                            // Check the vertex position and assign a color based on your criteria
-                            // For example, if the vertex is above a certain height, color it red
-                            //if (vertices[i].y > heightThreshold)
-                            //{
-                            //    colors[i] = Color.red;
-                            //    //Debug.Log("Above threshold");
-                            //}
-                            //else
-                            //{
-                            //    colors[i] = Color.blue;
-                            //    //Debug.Log("Below threshold");
-                            //}
                         }
 
                          
