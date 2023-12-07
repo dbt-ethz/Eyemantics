@@ -200,29 +200,47 @@ namespace MagicLeap.Examples
                         //Debug.Log($"Pixel Location Y Range: {pixelLocationRangeY}");
 
 
-
-                        for (int i = 0; i < vertices.Length; i++)
+                        if (!(TCPServer.mask == null || TCPServer.mask.Length == 0))
                         {
-                            // Initialize Color
-                            colors[i] = blue;
 
-                            Vector2 pixelLocation = _imageGazeInput.ViewportPointFromWorld(_imageGazeInput.cameraIntrinsics, vertices[i], _imageGazeInput.cameraPos.position, _imageGazeInput.cameraPos.rotation);
-
-                            if (pixelLocation != errVec)
+                            for (int i = 0; i < vertices.Length; i++)
                             {
-                                pixelLocation -= PrincipalPoint;
-                                //pixelLocation -= _imageGazeInput.cameraIntrinsics.PrincipalPoint;
-                                // Check if pixelLocation is within the specified range
-                                if (pixelLocation.x >= pixelLocationRangeX.x && pixelLocation.x <= pixelLocationRangeX.y &&
-                                    pixelLocation.y >= pixelLocationRangeY.x && pixelLocation.y <= pixelLocationRangeY.y)
+
+
+                                //// Initialize Color
+                                //colors[i] = blue;
+
+                                Vector2 pixelLocation = _imageGazeInput.ViewportPointFromWorld(_imageGazeInput.cameraIntrinsics, vertices[i], _imageGazeInput.cameraPos.position, _imageGazeInput.cameraPos.rotation);
+
+                                if (pixelLocation != errVec)
                                 {
-                                    //Debug.Log(pixelLocation);
-                                    // Add vertex to filteredVertices and corresponding color to filteredColors
-                                    colors[i] = red;
+                                    //pixelLocation -= PrincipalPoint;
+                                    ////pixelLocation -= _imageGazeInput.cameraIntrinsics.PrincipalPoint;
+                                    //// Check if pixelLocation is within the specified range
+                                    //if (pixelLocation.x >= pixelLocationRangeX.x && pixelLocation.x <= pixelLocationRangeX.y &&
+                                    //    pixelLocation.y >= pixelLocationRangeY.x && pixelLocation.y <= pixelLocationRangeY.y)
+                                    //{
+                                    //    //Debug.Log(pixelLocation);
+                                    //    // Add vertex to filteredVertices and corresponding color to filteredColors
+                                    //    colors[i] = red;
+                                    //}
+
+
+                                    int xIndex = Mathf.RoundToInt(pixelLocation.x);
+                                    int yIndex = Mathf.RoundToInt(pixelLocation.y);
+
+                                    // Check if the indices are within bounds before accessing the element
+                                    if (xIndex >= 0 && xIndex < TCPServer.mask.Length && yIndex >= 0 && yIndex < TCPServer.mask[0].Length)
+                                    {
+                                        if (TCPServer.mask[xIndex][yIndex])
+                                        {
+                                            colors[i] = red;
+                                        }
+                                    }
+
+
                                 }
                             }
-
-
 
                         }
 

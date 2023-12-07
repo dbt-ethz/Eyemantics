@@ -83,6 +83,8 @@ public class TCPServer : MonoBehaviour
         // Send image and coordinates
         SendData(img,coords);
 
+        Debug.Log("Start Receiving");
+
         // Receive mask
         ReceiveData();
 
@@ -92,6 +94,7 @@ public class TCPServer : MonoBehaviour
 
     static void SendData(byte[] image, float[] coords)
     {
+        Debug.Log("Start Sending");
         // Send image length
         Debug.Log(image.Length);
         byte[] imageSize = BitConverter.GetBytes(image.Length);
@@ -120,6 +123,8 @@ public class TCPServer : MonoBehaviour
         BitConverter.GetBytes(coords[1]).CopyTo(vectorBytes,4);
 
         stream.Write(vectorBytes, 0, vectorBytes.Length);
+
+        Debug.Log("Sending Completed");
 
     }
 

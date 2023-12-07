@@ -10,7 +10,7 @@ from automatic_mask_generator import *
 
 
 def image_to_mask(pedictor: any, input_point: np.ndarray, image: np.ndarray) -> np.ndarray:
-    image = cv2.cvtColor(image, cv2. cv2.COLOR_BGR2RGB) #test this
+    # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) #test this
     predictor.set_image(image)
     input_label = np.array([1])  # foreground
     mask, _, _ = predictor.predict(
@@ -32,7 +32,7 @@ predictor = SamPredictor(sam)
 
 #IPaddr = input('Input the MagicLeap device IP\n') 
 
-IPaddr = "172.20.10.3" #chnage this
+IPaddr = "192.168.1.61" #change this
 port = 4350
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -60,6 +60,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Decode byte array to cv2 image
             decoded = np.frombuffer(img_data, dtype=np.uint8)
             image = cv2.imdecode(decoded, cv2.IMREAD_COLOR)
+
+            # cv2.imshow('Magic Leap Camera Image', image)
+
+            # Filename 
+            filename = 'ML2Image.jpg'
+            
+            # Using cv2.imwrite() method 
+            # Saving the image 
+            cv2.imwrite(filename, image)
+
             # Send Reveive message
             message = bytes("Received", 'utf-8')
             s.sendall(message)
@@ -76,24 +86,51 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             print(f"received gaze point: {vector}")
 
             print("generating mask...")
-            mask_boolean = image_to_mask(predictor, image, vector)
+
+            vector = np.array(vector).astype(int)
+            vector = np.array([vector])
+            print(vector)
+
+
+            mask_boolean = image_to_mask(predictor, vector, image)
+
+            mask_boolean = np.squeeze(mask_boolean)
+
+            binary_image = np.uint8(mask_boolean) * 255
+
+            # Display the binary image using cv2.imshow (optional)
+            # cv2.imshow("Binary Image", binary_image)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
+
+            # Save the binary image using cv2.imwrite (optional)
+            cv2.imwrite("mask_image.png", binary_image)
+
+            test = np.sum(binary_image)
+            print(test)
 
             # Send mask back
             print("sending mask back...")
             rows = mask_boolean.shape[0].to_bytes(4,'little')
             s.sendall(rows)
-            #print(rows)
+            print(rows)
 
             cols = mask_boolean.shape[1].to_bytes(4,'little')
             s.sendall(cols)
-            #print(cols)
+            print(cols)
 
             for row in mask_boolean:
                     bytes_row = bytes(map(lambda x: 1 if x else 0, row))
-                    #print(bytes_row)
+                    # print(bytes_row)
                     s.sendall(bytes_row)
 
 
+
+
+            print("Done sending")
+
         s.close()
+
+
             #s.close()
         

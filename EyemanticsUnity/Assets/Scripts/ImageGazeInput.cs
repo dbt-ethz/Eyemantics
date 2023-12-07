@@ -81,6 +81,11 @@ public class ImageGazeInput : MonoBehaviour
             time = 0;
             EyeTracking();
         }
+
+        //if (!(TCPServer.mask == null || TCPServer.mask.Length == 0)) {
+        //    Debug.Log("Mask not empty!");
+        //}
+
     }
     private void OnPermissionDenied(string permission)
     {
@@ -202,7 +207,7 @@ public class ImageGazeInput : MonoBehaviour
     private void UpdateSphere(Pose pos)
     {
         Vector3 init_vec = new Vector3(0f, 0f, 1f);
-        gazeDisplayPrefab.transform.position = init_vec;
+        gazeDisplayPrefab.transform.position = pos.position;
     }
     void RowImageAvailable(MLCamera.CameraOutput output, MLCamera.ResultExtras extras, MLCamera.Metadata metadataHandle)
     {

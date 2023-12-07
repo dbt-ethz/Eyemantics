@@ -392,7 +392,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &424636142
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -528,8 +528,6 @@ MonoBehaviour:
   _pointCloudMaterial: {fileID: 2100000, guid: 468ab2539f82086478cbc040da1947d2, type: 2}
   _imageGazeInput: {fileID: 526660105}
   debugTextBox: {fileID: 1033361342}
-  pixelLocationRangeX: {x: -1000, y: 1000}
-  pixelLocationRangeY: {x: -1000, y: 1000}
 --- !u!1 &526660102
 GameObject:
   m_ObjectHideFlags: 0

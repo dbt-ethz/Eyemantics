@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/Scenes/Meshing.unity
     guid: d728827b8d976e749b9a167bef986315
   - enabled: 1
+    path: Assets/Scenes/OpeningScene.unity
+    guid: 5accadb9d2d71ca4f93fa01acf8a0551
+  - enabled: 1
     path: Assets/Scenes/GazeAndMeshing.unity
     guid: 741732c7f715a9341b8aee4ca2944269
   - enabled: 0
