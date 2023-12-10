@@ -98,6 +98,10 @@ public class ImageGazeInput : MonoBehaviour
     }
     private IEnumerator EnableMLCamera()
     {
+        while (!permissionGranted)
+        {
+            yield return new WaitForSeconds(1.0f);
+        }
         while (!_cameraDeviceAvailable)
         {
             MLResult result = MLCamera.GetDeviceAvailabilityStatus(_identifier, out _cameraDeviceAvailable);
