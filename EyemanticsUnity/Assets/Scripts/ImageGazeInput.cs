@@ -35,7 +35,7 @@ public class ImageGazeInput : MonoBehaviour
     private readonly MLPermissions.Callbacks camPermissionCallbacks = new MLPermissions.Callbacks();
     private readonly MLPermissions.Callbacks eyePermissionCallbacks = new MLPermissions.Callbacks();
     private float time = 0.0f;
-    private MLCamera.Identifier _identifier = MLCamera.Identifier.Main;
+    private MLCamera.Identifier _identifier = MLCamera.Identifier.CV;
     private bool _cameraDeviceAvailable = false;
 
     //[SerializeField, Tooltip("The UI to show the camera capture in YUV format")]
