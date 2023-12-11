@@ -23,16 +23,6 @@ public class InputManager : MonoBehaviour
     {
         controllerActions.Trigger.performed -= triggerPress;
     }
-
-    private void Update()
-    {
-#if UNITY_EDITOR
-        if (Input.GetKeyDown(KeyCode.Return))
-        {
-            imageGazeInput.ImageCapture();
-        }
-#endif
-    }
     public static void triggerPress(InputAction.CallbackContext context)
     {
         PopOutInfo.Instance.AddText("trigger press!!");

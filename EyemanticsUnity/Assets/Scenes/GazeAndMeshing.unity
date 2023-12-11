@@ -583,6 +583,7 @@ MonoBehaviour:
   captureHeight: 2160
   gazeDisplayPrefab: {fileID: 1183379449}
   gazeInterval: 0.2
+  imageCaptureInterval: 1
   _yuv2RgbShader: {fileID: 4800000, guid: a5994555198561c4cb8a5354eff85444, type: 3}
 --- !u!114 &526660106
 MonoBehaviour:
@@ -1336,8 +1337,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 2
-  m_fontSizeBase: 2
+  m_fontSize: 1.5
+  m_fontSizeBase: 1.5
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18

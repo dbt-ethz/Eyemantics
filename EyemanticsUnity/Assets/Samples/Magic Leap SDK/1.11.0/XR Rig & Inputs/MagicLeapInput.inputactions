@@ -611,52 +611,8 @@
         {
             "name": "Customize",
             "id": "af8f5d6f-5121-4a46-a8a1-bc183f362446",
-            "actions": [
-                {
-                    "name": "ImageGazeCapture",
-                    "type": "Button",
-                    "id": "374babec-0081-4e7d-8093-f0a7941a8d4f",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                }
-            ],
-            "bindings": [
-                {
-                    "name": "",
-                    "id": "a4058ff7-662f-45c4-a36b-52452ea0d7de",
-                    "path": "<MagicLeapController>{RightHand}/triggerPressed",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Magic Leap 2",
-                    "action": "ImageGazeCapture",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "f8e0624f-8224-407e-8bed-1412700c2227",
-                    "path": "<MagicLeapController>{LeftHand}/triggerPressed",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Magic Leap 2",
-                    "action": "ImageGazeCapture",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "42c806ba-9c28-4ceb-afb1-a2906a89aca9",
-                    "path": "<MagicLeapController>/triggerButton",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ImageGazeCapture",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                }
-            ]
+            "actions": [],
+            "bindings": []
         }
     ],
     "controlSchemes": [

@@ -249,7 +249,7 @@ public class ImageGazeInput : MonoBehaviour
         cameraIntrinsics = extras.Intrinsics.Value;
         Debug.Log($"Camera Resolution: {cameraIntrinsics.Width} * {cameraIntrinsics.Height}");
         pixelPos = ViewportPointFromWorld(cameraIntrinsics, gazeDisplayPrefab.transform.position, cameraPos.position, cameraPos.rotation);
-        Debug.Log($"image dimention: {captureWidth} * {captureHeight}");
+        //Debug.Log($"image dimention: {captureWidth} * {captureHeight}");
         Debug.Log($"gaze pos 2D: {pixelPos}");
         //}
         //else
@@ -259,21 +259,16 @@ public class ImageGazeInput : MonoBehaviour
 
         ReceiveAndCombineYUV(output, extras, metadataHandle);
 
-        PopOutInfo.Instance.AddText("Ready to send out img and gaze pos!");
+        Debug.Log("Ready to send out img and gaze pos!");
         // Send Image to PC
         if (!TCPServer.communicating)
         {
-            PopOutInfo.Instance.AddText("called tcpserver");
+            Debug.Log("called tcpserver");
             TCPServer.communicating = true;
             ThreadStart tc = new ThreadStart(TCPServer.Communication);
             TCPServer.commThread = new Thread(tc);
             TCPServer.commThread.Start();
         }
-    }
-    private void SaveYUVData(MLCamera.PlaneInfo imagePlane)
-    {
-        bytes = imagePlane.Data;
-        Debug.Log($"image size: {bytes.Length}");
     }
     private void ReceiveAndCombineYUV(MLCamera.CameraOutput output, MLCamera.ResultExtras extras, MLCamera.Metadata metadataHandle)
     {
@@ -291,8 +286,8 @@ public class ImageGazeInput : MonoBehaviour
         _combinedTexture2D = ToTexture2D(_renderTexture);
         bytes = _combinedTexture2D.EncodeToJPG();
         Debug.Log($"captured image size: {bytes.Length}");
-        string dataString = bytes.Aggregate(new StringBuilder(), (sb, b) => sb.AppendFormat("{0:x2} ", b), sb => sb.AppendFormat("({0})", bytes.Length).ToString());
-        SaveBytesArrayLocal(dataString);
+        //string dataString = bytes.Aggregate(new StringBuilder(), (sb, b) => sb.AppendFormat("{0:x2} ", b), sb => sb.AppendFormat("({0})", bytes.Length).ToString());
+        //SaveBytesArrayLocal(dataString);
     }
     private void UpdateYUVTextureChannel(ref Texture2D channelTexture, MLCamera.PlaneInfo imagePlane, string samplerName, ref byte[] newTexureChannel)
     {
