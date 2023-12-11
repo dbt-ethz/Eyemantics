@@ -29,6 +29,8 @@ public class TCPServer : MonoBehaviour
     internal static TcpClient client = new TcpClient();
     internal static NetworkStream stream = null;
 
+    public static bool newMaskFlag = false;
+
     // Dummy variables for current use
     //private byte[] img = File.ReadAllBytes(Application.dataPath + "/Images/IMG_7555.jpg");
     //private float[] coords = new float[] { 3.11f, 2.23f };
@@ -163,6 +165,7 @@ public class TCPServer : MonoBehaviour
 
         mask = maskList.ToArray();
 
+        newMaskFlag = true;
         // printMatrix(mask);
     }
 

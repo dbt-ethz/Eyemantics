@@ -26,7 +26,7 @@ public class PopOutInfo : MonoBehaviour
     }
     public void AddText(string newText)
     {
-        if(this.text.text.Length > 1500)
+        if(this.text.text.Length > 2000)
         {
             this.text.text = "";
         } 
