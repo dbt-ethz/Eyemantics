@@ -120,7 +120,6 @@ public class ImageGazeInput : MonoBehaviour
             MLCamera.ConnectContext connectContext = MLCamera.ConnectContext.Create();
             connectContext.CamId = _identifier;
             //The MLCamera.Identifier.Main is the only camera that can access the virtual and mixed reality flags
-            //connectContext.Flags = MLCamera.ConnectFlag.CamOnly;
             connectContext.Flags = MLCamera.ConnectFlag.CamOnly;
             connectContext.EnableVideoStabilization = true;
 
