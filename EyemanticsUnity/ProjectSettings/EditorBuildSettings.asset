@@ -11,7 +11,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/Meshing.unity
     guid: d728827b8d976e749b9a167bef986315
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/OpeningScene.unity
     guid: 5accadb9d2d71ca4f93fa01acf8a0551
   - enabled: 1

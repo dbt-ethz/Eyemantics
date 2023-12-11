@@ -579,7 +579,8 @@ MonoBehaviour:
     position: {x: 0, y: 0, z: 0}
     rotation: {x: 0, y: 0, z: 0, w: 0}
   pixelPos: {x: 0, y: 0}
-  captureHeight: 3072
+  captureWidth: 2880
+  captureHeight: 2160
   gazeDisplayPrefab: {fileID: 1183379449}
   gazeInterval: 0.2
   _yuv2RgbShader: {fileID: 4800000, guid: a5994555198561c4cb8a5354eff85444, type: 3}

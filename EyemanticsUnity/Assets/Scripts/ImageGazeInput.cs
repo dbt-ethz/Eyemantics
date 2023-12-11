@@ -21,11 +21,11 @@ public class ImageGazeInput : MonoBehaviour
 
     private Texture2D _imageTexture;
     public MLCamera _camera;
-    [SerializeField, Tooltip("Desired width for the camera capture")]
     public MLCamera.IntrinsicCalibrationParameters cameraIntrinsics;
-    private int captureWidth = 1280;
+    [SerializeField, Tooltip("Desired width for the camera capture")]
+    private int captureWidth = 2880;
     [SerializeField, Tooltip("Desired height for the camera capture")]
-    private int captureHeight = 720;
+    private int captureHeight = 2160;
     //Cache the capture configure for later use.
     private MLCamera.CaptureConfig _captureConfig;
 
@@ -35,7 +35,7 @@ public class ImageGazeInput : MonoBehaviour
     private readonly MLPermissions.Callbacks camPermissionCallbacks = new MLPermissions.Callbacks();
     private readonly MLPermissions.Callbacks eyePermissionCallbacks = new MLPermissions.Callbacks();
     private float time = 0.0f;
-    private MLCamera.Identifier _identifier = MLCamera.Identifier.Main;
+    private MLCamera.Identifier _identifier = MLCamera.Identifier.CV;
     private bool _cameraDeviceAvailable = false;
 
     //[SerializeField, Tooltip("The UI to show the camera capture in YUV format")]
@@ -118,6 +118,11 @@ public class ImageGazeInput : MonoBehaviour
         if (_cameraDeviceAvailable)
         {
             MLCamera.ConnectContext connectContext = MLCamera.ConnectContext.Create();
+            connectContext.CamId = _identifier;
+            //The MLCamera.Identifier.Main is the only camera that can access the virtual and mixed reality flags
+            connectContext.Flags = MLCamera.ConnectFlag.CamOnly;
+            connectContext.EnableVideoStabilization = true;
+
             _camera = MLCamera.CreateAndConnect(connectContext);
             if (_camera != null)
             {
@@ -148,7 +153,7 @@ public class ImageGazeInput : MonoBehaviour
 
         _captureConfig = new MLCamera.CaptureConfig();
         //MLCamera.OutputFormat outputFormat = MLCamera.OutputFormat.YUV_420_888;
-        MLCamera.OutputFormat outputFormat = MLCamera.OutputFormat.JPEG;
+        MLCamera.OutputFormat outputFormat = MLCamera.OutputFormat.YUV_420_888;
         _captureConfig.CaptureFrameRate = MLCamera.CaptureFrameRate.None;
         _captureConfig.StreamConfigs = new MLCamera.CaptureStreamConfig[1];
         _captureConfig.StreamConfigs[0] = MLCamera.CaptureStreamConfig.Create( defaultCapability, outputFormat);
@@ -215,11 +220,9 @@ public class ImageGazeInput : MonoBehaviour
     }
     void RowImageAvailable(MLCamera.CameraOutput output, MLCamera.ResultExtras extras, MLCamera.Metadata metadataHandle)
     {
-
         //if (output.Format == MLCamera.OutputFormat.YUV_420_888)
         //{
-        //SaveYUVData(output.Planes[0]);
-        UpdateJPGTexture(output.Planes[0]);
+        //UpdateJPGTexture(output.Planes[0]);
         //}
         //MLResult result = MLCVCamera.GetFramePose(extras.VCamTimestamp, out Matrix4x4 cameraTransform);
         //if (result.IsOk)
@@ -229,20 +232,23 @@ public class ImageGazeInput : MonoBehaviour
             //cameraPos.position = new Vector3(cameraTransform[0, 3], cameraTransform[1, 3], cameraTransform[2, 3]);
             //cameraPos.rotation = cameraTransform.rotation;
 
-            cameraPos.position = Camera.main.gameObject.transform.position;
-            cameraPos.rotation = Camera.main.gameObject.transform.rotation;
+        cameraPos.position = Camera.main.gameObject.transform.position;
+        cameraPos.rotation = Camera.main.gameObject.transform.rotation;
 
-            Debug.Log($"cam position: {cameraPos.position}\ncam rotation: {cameraPos.rotation}");
-            cameraIntrinsics = extras.Intrinsics.Value;
-            Debug.Log($"Camera Resolution: {cameraIntrinsics.Width} * {cameraIntrinsics.Height}");
-            pixelPos = ViewportPointFromWorld(cameraIntrinsics, gazeDisplayPrefab.transform.position, cameraPos.position, cameraPos.rotation);
-            Debug.Log($"image dimention: {captureWidth} * {captureHeight}");
-            Debug.Log($"gaze pos 2D: {pixelPos}");
+        Debug.Log($"cam position: {cameraPos.position}\ncam rotation: {cameraPos.rotation}");
+        cameraIntrinsics = extras.Intrinsics.Value;
+        Debug.Log($"Camera Resolution: {cameraIntrinsics.Width} * {cameraIntrinsics.Height}");
+        pixelPos = ViewportPointFromWorld(cameraIntrinsics, gazeDisplayPrefab.transform.position, cameraPos.position, cameraPos.rotation);
+        Debug.Log($"image dimention: {captureWidth} * {captureHeight}");
+        Debug.Log($"gaze pos 2D: {pixelPos}");
         //}
         //else
         //{
         //    Debug.Log("failed to receive extrinsic!!");
         //}
+
+        ReceiveAndCombineYUV(output, extras, metadataHandle);
+
         PopOutInfo.Instance.AddText("Ready to send out img and gaze pos!");
         // Send Image to PC
         if (!TCPServer.communicating)
@@ -259,57 +265,30 @@ public class ImageGazeInput : MonoBehaviour
         bytes = imagePlane.Data;
         Debug.Log($"image size: {bytes.Length}");
     }
-    private void OnCaptureDataReceived(MLCamera.CameraOutput output, MLCamera.ResultExtras extras, MLCamera.Metadata metadataHandle)
+    private void ReceiveAndCombineYUV(MLCamera.CameraOutput output, MLCamera.ResultExtras extras, MLCamera.Metadata metadataHandle)
     {
         if (output.Format != MLCamera.OutputFormat.YUV_420_888) return;
         MLCamera.FlipFrameVertically(ref output);
         InitializeMaterial();
+        // read data from y u v 3 channels
         UpdateYUVTextureChannel(ref _rawVideoTextureYuv[0], output.Planes[0], SamplerNamesYuv[0], ref _yChannelBuffer);
         UpdateYUVTextureChannel(ref _rawVideoTextureYuv[1], output.Planes[1], SamplerNamesYuv[1], ref _uChannelBuffer);
         UpdateYUVTextureChannel(ref _rawVideoTextureYuv[2], output.Planes[2], SamplerNamesYuv[2], ref _vChannelBuffer);
 
-        //CombineYUVChannels2RGB(output);
-        _yuvMaterial.mainTextureScale = new Vector2(1f / output.Planes[0].PixelStride, 1.0f);
-        _combinedTexture2D = _yuvMaterial.GetTexture("_MainTex") as Texture2D;
-        bytes = _combinedTexture2D.EncodeToPNG();
-        Debug.Log($"image size: {bytes.Length}");
+        //combine 3 channels into 1 render texture
+        CombineYUVChannels2RGB(output);
+        // render texture to texture 2D
+        _combinedTexture2D = ToTexture2D(_renderTexture);
+        bytes = _combinedTexture2D.EncodeToJPG();
+        Debug.Log($"captured image size: {bytes.Length}");
         string dataString = bytes.Aggregate(new StringBuilder(), (sb, b) => sb.AppendFormat("{0:x2} ", b), sb => sb.AppendFormat("({0})", bytes.Length).ToString());
         SaveBytesArrayLocal(dataString);
-    }
-    private void SaveBytesArrayLocal(string dataString)
-    {
-        string path = Application.persistentDataPath + "/" + "bytesArray";
-        Debug.Log($"save to local: {path}");
-        if (!Directory.Exists(path))
-        {
-            Directory.CreateDirectory(path);
-        }
-        StreamWriter writer = new StreamWriter(path + "/bytes.text");
-        writer.Write(dataString);
-        writer.Flush();
-        writer.Close();
-    }
-    private void InitializeMaterial()
-    {
-        if(_yuv2RgbShader == null)
-        {
-            _yuv2RgbShader = Shader.Find("Unlit/YUV_Camera_Shader");
-            if(_yuv2RgbShader == null)
-            {
-                Debug.LogError("shader not found!");
-                return;
-            }
-        }
-       if(_yuvMaterial == null)
-        {
-            _yuvMaterial = new Material(_yuv2RgbShader);
-        }
     }
     private void UpdateYUVTextureChannel(ref Texture2D channelTexture, MLCamera.PlaneInfo imagePlane, string samplerName, ref byte[] newTexureChannel)
     {
         int textureWidth = (int)imagePlane.Width;
         int textureHeight = (int)imagePlane.Height;
-        if(channelTexture == null || channelTexture.width != textureWidth || channelTexture.height != textureHeight)
+        if (channelTexture == null || channelTexture.width != textureWidth || channelTexture.height != textureHeight)
         {
             if (channelTexture != null)
             {
@@ -326,13 +305,13 @@ public class ImageGazeInput : MonoBehaviour
             channelTexture.filterMode = FilterMode.Bilinear;
             _yuvMaterial.SetTexture(samplerName, channelTexture);
         }
-        
+
         int actualWidth = (int)(textureWidth * imagePlane.PixelStride);
 
-        if(imagePlane.Stride != actualWidth)
+        if (imagePlane.Stride != actualWidth)
         {
             int requiredLength = actualWidth * textureHeight;
-            if(newTexureChannel == null || newTexureChannel.Length != requiredLength)
+            if (newTexureChannel == null || newTexureChannel.Length != requiredLength)
             {
                 newTexureChannel = new byte[requiredLength];
             }
@@ -367,6 +346,43 @@ public class ImageGazeInput : MonoBehaviour
         _commandBuffer.Blit(null, _renderTexture, _yuvMaterial);
         Graphics.ExecuteCommandBuffer(_commandBuffer);
         _commandBuffer.Clear();
+    }
+    private Texture2D ToTexture2D(RenderTexture rTex)
+    {
+        Texture2D tex = new Texture2D(rTex.width, rTex.height, TextureFormat.RGB24, false);
+        RenderTexture.active = rTex;
+        tex.ReadPixels(new Rect(0, 0, rTex.width, rTex.height), 0, 0);
+        tex.Apply();
+        return tex;
+    }
+    private void SaveBytesArrayLocal(string dataString)
+    {
+        string path = Application.persistentDataPath + "/" + "bytesArray";
+        Debug.Log($"save to local: {path}");
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+        }
+        StreamWriter writer = new StreamWriter(path + "/bytes.text");
+        writer.Write(dataString);
+        writer.Flush();
+        writer.Close();
+    }
+    private void InitializeMaterial()
+    {
+        if(_yuv2RgbShader == null)
+        {
+            _yuv2RgbShader = Shader.Find("Unlit/YUV_Camera_Shader");
+            if(_yuv2RgbShader == null)
+            {
+                Debug.LogError("shader not found!");
+                return;
+            }
+        }
+       if(_yuvMaterial == null)
+        {
+            _yuvMaterial = new Material(_yuv2RgbShader);
+        }
     }
     private void UpdateJPGTexture(MLCamera.PlaneInfo imagePlane)
     {
