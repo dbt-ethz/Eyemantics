@@ -31,10 +31,13 @@ public class ImageGazeInput : MonoBehaviour
 
     public GameObject gazeDisplayPrefab;
     public float gazeInterval = 0.2f;
+    public float imageCaptureInterval = 1f;
+
     private bool permissionGranted = false;
     private readonly MLPermissions.Callbacks camPermissionCallbacks = new MLPermissions.Callbacks();
     private readonly MLPermissions.Callbacks eyePermissionCallbacks = new MLPermissions.Callbacks();
     private float time = 0.0f;
+    private float cameraCaptureTime = 0f;
     private MLCamera.Identifier _identifier = MLCamera.Identifier.CV;
     private bool _cameraDeviceAvailable = false;
 
@@ -75,6 +78,7 @@ public class ImageGazeInput : MonoBehaviour
     }
     private void Update()
     {
+        cameraCaptureTime += Time.deltaTime;
         time += Time.deltaTime;
         if (time >= gazeInterval)
         {
@@ -220,6 +224,12 @@ public class ImageGazeInput : MonoBehaviour
     }
     void RowImageAvailable(MLCamera.CameraOutput output, MLCamera.ResultExtras extras, MLCamera.Metadata metadataHandle)
     {
+        
+        if (cameraCaptureTime < imageCaptureInterval)
+        {
+            return;
+        }
+        cameraCaptureTime = 0;
         //if (output.Format == MLCamera.OutputFormat.YUV_420_888)
         //{
         //UpdateJPGTexture(output.Planes[0]);
@@ -229,8 +239,8 @@ public class ImageGazeInput : MonoBehaviour
         //{
 
 
-            //cameraPos.position = new Vector3(cameraTransform[0, 3], cameraTransform[1, 3], cameraTransform[2, 3]);
-            //cameraPos.rotation = cameraTransform.rotation;
+        //cameraPos.position = new Vector3(cameraTransform[0, 3], cameraTransform[1, 3], cameraTransform[2, 3]);
+        //cameraPos.rotation = cameraTransform.rotation;
 
         cameraPos.position = Camera.main.gameObject.transform.position;
         cameraPos.rotation = Camera.main.gameObject.transform.rotation;
