@@ -120,6 +120,39 @@ namespace MagicLeap.Examples
             _meshingSubsystemComponent.meshRemoved -= OnMeshDestroyed;
         }
 
+        void Update()
+        {
+
+            if (TCPServer.newMaskFlag)
+            {
+                // Loop through each row
+                foreach (var row in TCPServer.mask)
+                {
+                    // Count the number of true values in the current row
+                    int trueCount = 0;
+                    foreach (var value in row)
+                    {
+                        if (value)
+                        {
+                            trueCount++;
+                        }
+                    }
+
+                    // Check if the count of true values is greater than 0
+                    if (trueCount > 0)
+                    {
+                        //Debug.Log($"Sum of row: {trueCount}");
+                    }
+                }
+
+                TCPServer.newMaskFlag = false;
+
+                Debug.Log($"Mask Dimensions: {TCPServer.mask.Length}, {TCPServer.mask[0].Length}");
+
+            }
+
+        }
+
         /// <summary>
         /// Set the render material on the meshes.
         /// </summary>
@@ -226,8 +259,19 @@ namespace MagicLeap.Examples
                                     //}
 
 
-                                    int xIndex = Mathf.RoundToInt(pixelLocation.x);
-                                    int yIndex = Mathf.RoundToInt(pixelLocation.y);
+                                    int xIndex = Mathf.RoundToInt(pixelLocation.y);
+                                    int yIndex = Mathf.RoundToInt(pixelLocation.x);
+
+                                    //xIndex = (int)_imageGazeInput.cameraIntrinsics.Width - xIndex;
+                                    //yIndex = (int)_imageGazeInput.cameraIntrinsics.Height - yIndex;
+
+                                    //float distance = Vector2.Distance(pixelLocation, Vector2.zero);
+
+                                    //if (distance <= 200)
+                                    //{
+                                    //    Debug.Log("Inside Circle");
+                                    //    colors[i] = red;
+                                    //}
 
                                     // Check if the indices are within bounds before accessing the element
                                     if (xIndex >= 0 && xIndex < TCPServer.mask.Length && yIndex >= 0 && yIndex < TCPServer.mask[0].Length)
