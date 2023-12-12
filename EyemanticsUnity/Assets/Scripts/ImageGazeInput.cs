@@ -283,7 +283,9 @@ public class ImageGazeInput : MonoBehaviour
         //combine 3 channels into 1 render texture
         CombineYUVChannels2RGB(output);
         // render texture to texture 2D
-        _combinedTexture2D = ToTexture2D(_renderTexture);
+        //_combinedTexture2D = ToTexture2D(_renderTexture);
+        _combinedTexture2D = ExtendedTexureMethod.toTexture2D(_renderTexture);
+        bytes = null;
         bytes = _combinedTexture2D.EncodeToJPG();
         Debug.Log($"captured image size: {bytes.Length}");
         //string dataString = bytes.Aggregate(new StringBuilder(), (sb, b) => sb.AppendFormat("{0:x2} ", b), sb => sb.AppendFormat("({0})", bytes.Length).ToString());
