@@ -35,6 +35,8 @@ predictor = SamPredictor(sam)
 IPaddr = "192.168.1.61" #change this
 port = 4350
 
+firstIter = False
+
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     while(True):
         s.connect((IPaddr,port))
@@ -55,6 +57,15 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 img_data += packet
                 i += len(packet)
 
+
+
+            if not firstIter:
+                vec_data = img_data[-8:]
+                vector_test = struct.unpack('ff', vec_data)
+                print(vector_test)
+
+                img_data = img_data[:-8]
+
             print(f"received image of size: {len(img_data)}")
 
             # Decode byte array to cv2 image
@@ -65,18 +76,24 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
 
 
-            # Send Reveive message
-            message = bytes("Received", 'utf-8')
-            s.sendall(message)
+            if firstIter:
 
-            # Receive coordinates
-            coord_data = s.recv(8)
-            if not coord_data:
-                break
+                # # Send Reveive message
+                # message = bytes("Received", 'utf-8')
+                # s.sendall(message)
 
-            # Decode coorindates into floats
-            vector = struct.unpack('ff', coord_data)
-            # conn.sendall(img_data)
+                # Receive coordinates
+                coord_data = s.recv(8)
+                if not coord_data:
+                    break
+
+
+                # Decode coorindates into floats
+                vector = struct.unpack('ff', coord_data)
+                # conn.sendall(img_data)
+
+            else:
+                vector = vector_test
     
             print(f"received gaze point: {vector}")
 
@@ -111,8 +128,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 row_sum = np.sum(row)
                 
                 # Check if the sum is greater than 0
-                if row_sum > 0:
-                    print(f"Sum of row: {row_sum}")
+                #if row_sum > 0:
+                    #print(f"Sum of row: {row_sum}")
 
             binary_image *= 255
 
@@ -130,11 +147,11 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Send mask back
             print("sending mask back...")
             rows = mask_boolean.shape[0].to_bytes(4,'little')
-            s.sendall(rows)
+            # s.sendall(rows)
             print(rows)
 
             cols = mask_boolean.shape[1].to_bytes(4,'little')
-            s.sendall(cols)
+            # s.sendall(cols)
             print(cols)
 
             for row in mask_boolean:

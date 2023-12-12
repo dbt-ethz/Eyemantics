@@ -60,7 +60,7 @@ namespace MagicLeap.Examples
         public RenderMode renderMode
         {
             get; private set;
-        } = RenderMode.Wireframe;
+        } = RenderMode.Colored;
 
         /// <summary>
         /// Start listening for MeshingSubsystemComponent events.
@@ -164,26 +164,13 @@ namespace MagicLeap.Examples
                 // Set the render mode.
                 renderMode = mode;
 
-                _meshingSubsystemComponent.requestedMeshType = (renderMode == RenderMode.PointCloud) ? 
-                    MeshingSubsystemComponent.MeshType.PointCloud : 
-                    MeshingSubsystemComponent.MeshType.Triangles;
-
                 switch (renderMode)
                 {
                     case RenderMode.None:
                         break;
-                    case RenderMode.Wireframe:
-                        _meshingSubsystemComponent.PrefabRenderer.sharedMaterial = _wireframeMaterial;
-                        break;
                     case RenderMode.Colored:
                         _meshingSubsystemComponent.PrefabRenderer.sharedMaterial = _coloredMaterial;
                         break;
-                    case RenderMode.PointCloud:
-                        _meshingSubsystemComponent.PrefabRenderer.sharedMaterial = _pointCloudMaterial;
-                        break;
-                    //case RenderMode.Occlusion:
-                    //    _meshingSubsystemComponent.PrefabRenderer.sharedMaterial = _occlusionMaterial;
-                    //    break;
                     default:
                         throw new ArgumentOutOfRangeException($"unknown renderMode value: {renderMode}");
                 }
@@ -273,28 +260,26 @@ namespace MagicLeap.Examples
                                     //    colors[i] = red;
                                     //}
 
-                                    // Check if the indices are within bounds before accessing the element
+                                    //// Check if the indices are within bounds before accessing the element
                                     if (xIndex >= 0 && xIndex < TCPServer.mask.Length && yIndex >= 0 && yIndex < TCPServer.mask[0].Length)
                                     {
                                         if (TCPServer.mask[xIndex][yIndex])
                                         {
                                             colors[i] = red;
                                         }
-                                    }
+                                        //}
 
+
+                                    }
 
                                 }
                             }
 
                         }
-
-                         
+                            
                         meshFilter.mesh.colors = colors;
                     }
-
                 }
-
-
             }
         }
 
