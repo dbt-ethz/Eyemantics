@@ -527,7 +527,8 @@ MonoBehaviour:
   _coloredMaterial: {fileID: 2100000, guid: 0892e694f3450944e89bb4fd940adbb7, type: 2}
   _pointCloudMaterial: {fileID: 2100000, guid: 468ab2539f82086478cbc040da1947d2, type: 2}
   _imageGazeInput: {fileID: 526660105}
-  debugTextBox: {fileID: 1033361342}
+  debugTextBox: {fileID: 0}
+  renderMask: 0
 --- !u!1 &526660102
 GameObject:
   m_ObjectHideFlags: 0
@@ -814,7 +815,6 @@ MonoBehaviour:
   _bounded: 0
   _shootingPrefab: {fileID: 1768872223544792, guid: 0366462f309e13d4b9b10375dbfee67b,
     type: 3}
-  _renderMode: 3
   _boundedExtentsSize: {x: 2, y: 2, z: 2}
   _boundlessExtentsSize: {x: 10, y: 10, z: 10}
 --- !u!1 &1033361340

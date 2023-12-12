@@ -244,7 +244,7 @@ public class ImageGazeInput : MonoBehaviour
 
         cameraPos.position = Camera.main.gameObject.transform.position;
         cameraPos.rotation = Camera.main.gameObject.transform.rotation;
-
+        //TCPServer.mask = null;
         Debug.Log($"cam position: {cameraPos.position}\ncam rotation: {cameraPos.rotation}");
         cameraIntrinsics = extras.Intrinsics.Value;
         Debug.Log($"Camera Resolution: {cameraIntrinsics.Width} * {cameraIntrinsics.Height}");

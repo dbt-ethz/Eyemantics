@@ -44,10 +44,6 @@ namespace MagicLeap.Examples
         [SerializeField, Space, Tooltip("Prefab to shoot into the scene.")]
         private GameObject _shootingPrefab = null;
 
-        [SerializeField, Space, Tooltip("Render mode to render mesh data with.")]
-        private MeshingVisualizer.RenderMode _renderMode = MeshingVisualizer.RenderMode.Wireframe;
-        private int _renderModeCount;
-
         [SerializeField, Space, Tooltip("Size of the bounds extents when bounded setting is enabled.")]
         private Vector3 _boundedExtentsSize = new Vector3(2.0f, 2.0f, 2.0f);
 
@@ -124,8 +120,6 @@ namespace MagicLeap.Examples
 
             xRRayInteractor = FindObjectOfType<XRRayInteractor>();
 
-            _renderModeCount = System.Enum.GetNames(typeof(MeshingVisualizer.RenderMode)).Length;
-
             _camera = Camera.main;
 
             mlInputs = new MagicLeapInputs();
@@ -154,8 +148,6 @@ namespace MagicLeap.Examples
                     inputSubsystem = loader.GetLoadedSubsystem<XRInputSubsystem>();
                     inputSubsystem.trackingOriginUpdated += OnTrackingOriginChanged;
 
-                    _meshingVisualizer.SetRenderers(_renderMode);
-
                     _meshingSubsystemComponent.gameObject.transform.position = _camera.gameObject.transform.position;
                     UpdateBounds();
                 }
@@ -167,11 +159,6 @@ namespace MagicLeap.Examples
         /// </summary>
         void Update()
         {
-            if (_meshingVisualizer.renderMode != _renderMode)
-            {
-                _meshingVisualizer.SetRenderers(_renderMode);
-
-            }
 
             _meshingSubsystemComponent.gameObject.transform.position = _camera.gameObject.transform.position;
             if ((_bounded && _meshingSubsystemComponent.gameObject.transform.localScale != _boundedExtentsSize) ||
@@ -235,8 +222,7 @@ namespace MagicLeap.Examples
         private void OnBumperDown(InputAction.CallbackContext callbackContext)
         {
             Debug.Log("Bumper Down");
-            _renderMode = (MeshingVisualizer.RenderMode)((int)(_renderMode + 1) % _renderModeCount);
-            _meshingVisualizer.SetRenderers(_renderMode);
+            _meshingVisualizer.SetRenderers();
         }
 
         /// <summary>

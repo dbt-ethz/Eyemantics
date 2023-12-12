@@ -23,15 +23,7 @@ namespace MagicLeap.Examples
     /// </summary>
     public class MeshingVisualizer : MonoBehaviour
     {
-        public enum RenderMode
-        {
-            None,
-            Wireframe,
-            Colored,
-            PointCloud,
-        }
-
-        
+       
 
         [SerializeField, Tooltip("The MeshingSubsystemComponent from which to get update on mesh types.")]
         private MeshingSubsystemComponent _meshingSubsystemComponent = null;
@@ -57,10 +49,10 @@ namespace MagicLeap.Examples
         // HashSet to store mesh IDs.
         private HashSet<UnityEngine.XR.MeshId> meshIdSet = new HashSet<UnityEngine.XR.MeshId>();
 
-        public RenderMode renderMode
-        {
-            get; private set;
-        } = RenderMode.Colored;
+        public bool renderMask = false;
+
+        private Vector3 cameraPos;
+        private Quaternion cameraRot;
 
         /// <summary>
         /// Start listening for MeshingSubsystemComponent events.
@@ -125,25 +117,9 @@ namespace MagicLeap.Examples
 
             if (TCPServer.newMaskFlag)
             {
-                // Loop through each row
-                foreach (var row in TCPServer.mask)
-                {
-                    // Count the number of true values in the current row
-                    int trueCount = 0;
-                    foreach (var value in row)
-                    {
-                        if (value)
-                        {
-                            trueCount++;
-                        }
-                    }
-
-                    // Check if the count of true values is greater than 0
-                    if (trueCount > 0)
-                    {
-                        //Debug.Log($"Sum of row: {trueCount}");
-                    }
-                }
+                cameraPos = _imageGazeInput.cameraPos.position;
+                cameraRot = _imageGazeInput.cameraPos.rotation;
+                UpdateAllMeshes();
 
                 TCPServer.newMaskFlag = false;
 
@@ -157,27 +133,13 @@ namespace MagicLeap.Examples
         /// Set the render material on the meshes.
         /// </summary>
         /// <param name="mode">The render mode that should be used on the material.</param>
-        public void SetRenderers(RenderMode mode)
+        public void SetRenderers()
         {
-            if (renderMode != mode)
-            {
-                // Set the render mode.
-                renderMode = mode;
 
-                switch (renderMode)
-                {
-                    case RenderMode.None:
-                        break;
-                    case RenderMode.Colored:
-                        _meshingSubsystemComponent.PrefabRenderer.sharedMaterial = _coloredMaterial;
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException($"unknown renderMode value: {renderMode}");
-                }
-
-                _meshingSubsystemComponent.DestroyAllMeshes();
-                _meshingSubsystemComponent.RefreshAllMeshes();
-            }
+            renderMask = !renderMask;
+            _meshingSubsystemComponent.DestroyAllMeshes();
+            _meshingSubsystemComponent.RefreshAllMeshes();
+            _meshingSubsystemComponent.PrefabRenderer.sharedMaterial = _coloredMaterial;
         }
         
         /// <summary>
@@ -193,12 +155,42 @@ namespace MagicLeap.Examples
                 var mr = meshGameObject.GetComponent<MeshRenderer>();
                 if (mr != null)
                 {
-                    mr.enabled = renderMode != RenderMode.None;
+                    mr.enabled = renderMask;
                 }
 
                 Vector2 errVec = new Vector2(-1f, -1f);
 
-                if (renderMode == RenderMode.Colored)
+                UpdateMesh(meshId);
+                
+            }
+        }
+
+        public void UpdateAllMeshes()
+        {
+
+            foreach (UnityEngine.XR.MeshId meshId in meshIdSet)
+            {
+                UpdateMesh(meshId);
+            }
+
+        }
+
+
+
+        public void UpdateMesh(UnityEngine.XR.MeshId meshId)
+        {
+
+            if (_meshingSubsystemComponent.meshIdToGameObjectMap.TryGetValue(meshId, out var meshGameObject))
+            {
+                var mr = meshGameObject.GetComponent<MeshRenderer>();
+                if (mr != null)
+                {
+                    mr.enabled = renderMask;
+                }
+
+                Vector2 errVec = new Vector2(-1f, -1f);
+
+                if (renderMask)
                 {
                     double heightThreshold = 0f;
                     var meshFilter = meshGameObject.GetComponent<MeshFilter>();
@@ -230,7 +222,7 @@ namespace MagicLeap.Examples
                                 //// Initialize Color
                                 //colors[i] = blue;
 
-                                Vector2 pixelLocation = _imageGazeInput.ViewportPointFromWorld(_imageGazeInput.cameraIntrinsics, vertices[i], _imageGazeInput.cameraPos.position, _imageGazeInput.cameraPos.rotation);
+                                Vector2 pixelLocation = _imageGazeInput.ViewportPointFromWorld(_imageGazeInput.cameraIntrinsics, vertices[i], cameraPos, cameraRot);
 
                                 if (pixelLocation != errVec)
                                 {
@@ -276,11 +268,13 @@ namespace MagicLeap.Examples
                             }
 
                         }
-                            
+
                         meshFilter.mesh.colors = colors;
                     }
                 }
             }
+
+
         }
 
         // Function to be called by Meshing Subsystem Component when a mesh is destroyed.
