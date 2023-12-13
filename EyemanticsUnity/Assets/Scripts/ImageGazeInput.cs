@@ -271,16 +271,6 @@ public class ImageGazeInput : MonoBehaviour
         }
         Debug.Log($"captured image size after comm: {bytes.Length}");
 
-        // Get the last 8 bytes from the array
-        byte[] lastEightBytes = new byte[8];
-        Array.Copy(bytes, bytes.Length - 8, lastEightBytes, 0, 8);
-
-        // Convert the first 4 bytes of the last 8 to a float
-        float float1 = BitConverter.ToSingle(lastEightBytes, 0);
-
-        // Convert the last 4 bytes of the 8 to another float
-        float float2 = BitConverter.ToSingle(lastEightBytes, 4);
-        Debug.Log($"Last 8 bytes: {float1}, {float2}");
     }
     private void ReceiveAndCombineYUV(MLCamera.CameraOutput output, MLCamera.ResultExtras extras, MLCamera.Metadata metadataHandle)
     {

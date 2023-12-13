@@ -14,6 +14,7 @@ using UnityEngine.XR.MagicLeap;
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace MagicLeap.Examples
 {
@@ -23,7 +24,14 @@ namespace MagicLeap.Examples
     /// </summary>
     public class MeshingVisualizer : MonoBehaviour
     {
-       
+
+
+        [DllImport("UnityMagicLeap", CallingConvention = CallingConvention.Cdecl, EntryPoint = "UnityMagicLeap_SegmentedDimmer_KeepAlpha")]
+
+        private static extern void SetSegmentedDimmerKeepAlpha(bool status);
+
+
+
 
         [SerializeField, Tooltip("The MeshingSubsystemComponent from which to get update on mesh types.")]
         private MeshingSubsystemComponent _meshingSubsystemComponent = null;
@@ -59,6 +67,11 @@ namespace MagicLeap.Examples
         /// </summary>
         void Awake()
         {
+
+
+            SetSegmentedDimmerKeepAlpha(true);
+
+            
             // Validate all required game objects.
             if (_meshingSubsystemComponent == null)
             {
@@ -202,8 +215,8 @@ namespace MagicLeap.Examples
                         Vector2 PrincipalPoint = new Vector2(_imageGazeInput.cameraIntrinsics.PrincipalPoint.x, _imageGazeInput.cameraIntrinsics.PrincipalPoint.x);
                         Vector2 zeroVec = new Vector2(0f, 0f);
 
-                        Color red = new Color(1f, 0f, 0f, 0f);
-                        Color blue = new Color(0f, 0f, 1f, 1f);
+                        Color red = new Color(1f, 0f, 0f, 1f);
+                        Color transparent = new Color(1f, 1f, 1f, 0f);
 
                         Vector2 pixelLocationRangeX = new Vector2(-50f, 50f);
                         Vector2 pixelLocationRangeY = new Vector2(-50f, 50f);
@@ -211,8 +224,12 @@ namespace MagicLeap.Examples
                         //Debug.Log($"Pixel Location X Range: {pixelLocationRangeX}");
                         //Debug.Log($"Pixel Location Y Range: {pixelLocationRangeY}");
 
+                        //for (int i = 0; i < vertices.Length; i++)
+                        //{
+                        //    colors[i] = transparent;
+                        //}
 
-                        if (!(TCPServer.mask == null || TCPServer.mask.Length == 0))
+                            if (!(TCPServer.mask == null || TCPServer.mask.Length == 0))
                         {
 
                             for (int i = 0; i < vertices.Length; i++)
