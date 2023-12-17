@@ -32,7 +32,7 @@ predictor = SamPredictor(sam)
 
 #IPaddr = input('Input the MagicLeap device IP\n') 
 
-IPaddr = "127.10.000.1" #change this
+IPaddr = "192.168.1.61" #change this
 port = 4350
 
 firstIter = False

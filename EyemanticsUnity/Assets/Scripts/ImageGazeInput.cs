@@ -30,7 +30,8 @@ public class ImageGazeInput : MonoBehaviour
     private MLCamera.CaptureConfig _captureConfig;
 
     public GameObject gazeDisplayPrefab;
-    public float gazeInterval = 0.2f;
+    public Vector3 gazePoint;
+    public float gazeInterval = 0.5f;
     public float imageCaptureInterval = 1f;
     private List<Vector3> gazePoints = new List<Vector3>(); // List to store gaze points
 
@@ -83,18 +84,21 @@ public class ImageGazeInput : MonoBehaviour
         cameraCaptureTime += Time.deltaTime;
         time += Time.deltaTime;
 
-        // Continuously record gaze points
-        EyeTracking();
 
-        // Every 0.2 seconds, calculate median and update sphere
+
         if (time >= gazeInterval)
         {
             time = 0;
-            UpdateSpherePositionUsingMedian();
-            gazePoints.Clear(); // Clear the list for next interval
-
-            Debug.Log($"Head Position: {Camera.main.gameObject.transform.position}, Rotation: {Camera.main.gameObject.transform.rotation.eulerAngles}");
+            EyeTracking();
+            //UpdateSpherePositionUsingMedian();
+            gazePoints.Clear();
+            //Debug.Log($"Position: {Camera.main.gameObject.transform.position}\t Rotation: {Camera.main.gameObject.transform.rotation.eulerAngles}");
         }
+
+        //if (!(TCPServer.mask == null || TCPServer.mask.Length == 0)) {
+        //    Debug.Log("Mask not empty!");
+        //}
+
     }
     private void OnPermissionDenied(string permission)
     {
@@ -178,29 +182,54 @@ public class ImageGazeInput : MonoBehaviour
         {
             return;
         }
-        MLResult result = _camera.PrepareCapture(_captureConfig, out MLCamera.Metadata metaData);
-        if (result.IsOk)
+        // Start a new thread for the capture process
+        new Thread(() =>
         {
-            //Debug.Log("first result ok!!");
-            // Trigger auto exposure and auto white balance
-            _camera.PreCaptureAEAWB();
-            result = _camera.CaptureImage();
+            Thread.CurrentThread.IsBackground = true;
+
+            MLResult result = _camera.PrepareCapture(_captureConfig, out MLCamera.Metadata metaData);
             if (result.IsOk)
             {
-                Debug.Log("image captured!!");
-                //PopOutInfo.Instance.AddText("image captured!!");
+                _camera.PreCaptureAEAWB();
+                result = _camera.CaptureImage();
+                if (!result.IsOk)
+                {
+                    Debug.LogError("Failed to start image capture!");
+                }
             }
-            else
-            {
-                Debug.LogError("Failed to start image capture!");
-                //PopOutInfo.Instance.AddText("Failed to start image capture!");
-            }
-        }
-        //else
-        //{
-        //    Debug.Log("first result not ok!!");
-        //}
+        }).Start();
     }
+
+    //public void ImageCapture()
+    //{
+    //    if (!permissionGranted)
+    //    {
+    //        return;
+    //    }
+    //    MLResult result = _camera.PrepareCapture(_captureConfig, out MLCamera.Metadata metaData);
+    //    if (result.IsOk)
+    //    {
+    //        //Debug.Log("first result ok!!");
+    //        // Trigger auto exposure and auto white balance
+    //        _camera.PreCaptureAEAWB();
+    //        result = _camera.CaptureImage();
+    //        if (result.IsOk)
+    //        {
+    //            Debug.Log("image captured!!");
+    //            //PopOutInfo.Instance.AddText("image captured!!");
+    //        }
+    //        else
+    //        {
+    //            Debug.LogError("Failed to start image capture!");
+    //            //PopOutInfo.Instance.AddText("Failed to start image capture!");
+    //        }
+    //    }
+    //    //else
+    //    //{
+    //    //    Debug.Log("first result not ok!!");
+    //    //}
+    //}
+
     private void EyeTracking()
     {
         if (!permissionGranted)
@@ -209,16 +238,24 @@ public class ImageGazeInput : MonoBehaviour
         }
 
         MLResult gazeStateResult = MLGazeRecognition.GetState(out MLGazeRecognition.State state);
-        if (gazeStateResult.IsOk)
+        MLResult gazeStaticDataResult = MLGazeRecognition.GetStaticData(out MLGazeRecognition.StaticData data);
+
+        //Debug.Log($"MLGazeRecognitionStaticData {gazeStaticDataResult.Result}\n" +
+        //    $"Vergence {data.Vergence}\n" +
+        //    $"EyeHeightMax {data.EyeHeightMax}\n" +
+        //    $"EyeWidthMax {data.EyeWidthMax}\n" +
+        //    $"MLGazeRecognitionState: {gazeStateResult.Result}\n" +
+        //    state.ToString());
+        if (data.Vergence != null)
         {
-            MLResult gazeStaticDataResult = MLGazeRecognition.GetStaticData(out MLGazeRecognition.StaticData data);
-            if (gazeStaticDataResult.IsOk && data.Vergence != null)
-            {
-                // Extract the position component from the Pose
-                Vector3 gazePosition = data.Vergence.position;
-                gazePoints.Add(gazePosition); // Store the gaze position
-            }
+            //gazePoints.Add(data.Vergence.position);
+            UpdateSphere(data.Vergence.position);
         }
+    }
+    private void UpdateSphere(Vector3 pos)
+    {
+        gazeDisplayPrefab.transform.position = pos;
+        gazePoint = pos;
     }
 
     private void UpdateSpherePositionUsingMedian()
@@ -227,11 +264,7 @@ public class ImageGazeInput : MonoBehaviour
 
         // Calculate median of gaze points
         Vector3 medianGazePoint = CalculateMedianGazePoint(gazePoints);
-
-        // Create a Pose object from the median position with a default rotation
-        Pose medianPose = new Pose(medianGazePoint, Quaternion.identity);
-
-        UpdateSphere(medianPose); // Update the sphere with the median Pose
+        UpdateSphere(medianGazePoint); // Update the sphere with the median gaze point
     }
 
     private Vector3 CalculateMedianGazePoint(List<Vector3> points)
@@ -247,11 +280,6 @@ public class ImageGazeInput : MonoBehaviour
         return new Vector3(medianX, medianY, medianZ);
     }
 
-    private void UpdateSphere(Pose pos)
-    {
-        Vector3 init_vec = new Vector3(0f, 0f, 1f);
-        gazeDisplayPrefab.transform.position = pos.position;
-    }
     void RowImageAvailable(MLCamera.CameraOutput output, MLCamera.ResultExtras extras, MLCamera.Metadata metadataHandle)
     {
         
@@ -264,23 +292,24 @@ public class ImageGazeInput : MonoBehaviour
         //{
         //UpdateJPGTexture(output.Planes[0]);
         //}
-        //MLResult result = MLCVCamera.GetFramePose(extras.VCamTimestamp, out Matrix4x4 cameraTransform);
+        MLResult result = MLCVCamera.GetFramePose(extras.VCamTimestamp, out Matrix4x4 cameraTransform);
         //if (result.IsOk)
         //{
 
 
-        //cameraPos.position = new Vector3(cameraTransform[0, 3], cameraTransform[1, 3], cameraTransform[2, 3]);
-        //cameraPos.rotation = cameraTransform.rotation;
+        cameraPos.position = new Vector3(cameraTransform[0, 3], cameraTransform[1, 3], cameraTransform[2, 3]);
+        cameraPos.rotation = cameraTransform.rotation;
 
-        cameraPos.position = Camera.main.gameObject.transform.position;
-        cameraPos.rotation = Camera.main.gameObject.transform.rotation;
-        //TCPServer.mask = null;
-        Debug.Log($"cam position: {cameraPos.position}\ncam rotation: {cameraPos.rotation}");
+        //cameraPos.position = Camera.main.gameObject.transform.position;
+        //cameraPos.rotation = Camera.main.gameObject.transform.rotation;
+        ////TCPServer.mask = null;
+        Debug.Log($"cam position: {cameraPos.position}\ncam rotation: {cameraPos.rotation.eulerAngles}");
+
         cameraIntrinsics = extras.Intrinsics.Value;
-        Debug.Log($"Camera Resolution: {cameraIntrinsics.Width} * {cameraIntrinsics.Height}");
-        pixelPos = ViewportPointFromWorld(cameraIntrinsics, gazeDisplayPrefab.transform.position, cameraPos.position, cameraPos.rotation);
+        //Debug.Log($"Camera Resolution: {cameraIntrinsics.Width} * {cameraIntrinsics.Height}");
+        pixelPos = ViewportPointFromWorld(cameraIntrinsics, gazePoint, cameraPos.position, cameraPos.rotation, Quaternion.identity);
         //Debug.Log($"image dimention: {captureWidth} * {captureHeight}");
-        Debug.Log($"gaze pos 2D: {pixelPos}");
+        //Debug.Log($"gaze pos 2D: {pixelPos}");
         //}
         //else
         //{
@@ -289,11 +318,11 @@ public class ImageGazeInput : MonoBehaviour
 
         ReceiveAndCombineYUV(output, extras, metadataHandle);
 
-        Debug.Log("Ready to send out img and gaze pos!");
+        //Debug.Log("Ready to send out img and gaze pos!");
         // Send Image to PC
         if (!TCPServer.communicating)
         {
-            Debug.Log("called tcpserver");
+            //Debug.Log("called tcpserver");
             TCPServer.communicating = true;
             ThreadStart tc = new ThreadStart(TCPServer.Communication);
             TCPServer.commThread = new Thread(tc);
@@ -319,7 +348,7 @@ public class ImageGazeInput : MonoBehaviour
         _combinedTexture2D = ExtendedTexureMethod.toTexture2D(_renderTexture);
         bytes = null;
         bytes = _combinedTexture2D.EncodeToJPG();
-        Debug.Log($"captured image size: {bytes.Length}");
+        //Debug.Log($"captured image size: {bytes.Length}");
         //string dataString = bytes.Aggregate(new StringBuilder(), (sb, b) => sb.AppendFormat("{0:x2} ", b), sb => sb.AppendFormat("({0})", bytes.Length).ToString());
         //SaveBytesArrayLocal(dataString);
     }
@@ -450,11 +479,24 @@ public class ImageGazeInput : MonoBehaviour
         File.WriteAllBytes(Application.dataPath + "/Images/" + Time.time + ".jpgs", bytes);
 #endif
     }
-    public Vector2 ViewportPointFromWorld(MLCamera.IntrinsicCalibrationParameters icp, Vector3 worldPoint, Vector3 cameraPos, Quaternion cameraRotation)
+    public Vector2 ViewportPointFromWorld(
+        MLCamera.IntrinsicCalibrationParameters icp,
+        Vector3 worldPoint,
+        Vector3 cameraPos,
+        Quaternion cameraRotation,
+        Quaternion rotationOffset = default)
     {
+        // If no rotation offset is provided, use the identity quaternion (no rotation)
+        if (rotationOffset == default)
+        {
+            rotationOffset = Quaternion.identity;
+        }
 
-        // Step 1: Convert world point to camera space 
+        // Step 1: Convert world point to camera space
         Vector3 pointInCameraSpace = Quaternion.Inverse(cameraRotation) * (worldPoint - cameraPos);
+
+        // Apply the rotation offset to the point in camera space
+        pointInCameraSpace = rotationOffset * pointInCameraSpace;
 
         //Debug.Log($"3D Point in Camera Space: {pointInCameraSpace}");
 
@@ -462,20 +504,13 @@ public class ImageGazeInput : MonoBehaviour
         if (pointInCameraSpace.z <= 0) // Avoid division by zero
             return new Vector2(-1f, -1f); // Indicate an error or out-of-bounds
 
-        // Step 2: Project the camera-space point onto the image plane
+        // Step 3: Project the camera-space point onto the image plane
         Vector2 viewportPoint = new Vector2(
             icp.FocalLength.x * pointInCameraSpace.x / pointInCameraSpace.z + icp.PrincipalPoint.x,
             icp.Height - ((pointInCameraSpace.y / pointInCameraSpace.z) * icp.FocalLength.y + icp.PrincipalPoint.y)
         );
 
         return viewportPoint;
-        
-
-
-        //float x = (pointInCameraSpace.x / pointInCameraSpace.z) * icp.FocalLength.x + icp.PrincipalPoint.x;
-        //float y = icp.Height - ((pointInCameraSpace.y / pointInCameraSpace.z) * icp.FocalLength.y + icp.PrincipalPoint.y);
-        //Vector2 viewportPoint = new Vector2(x, y);
-
-        //return viewportPoint;
     }
+
 }
