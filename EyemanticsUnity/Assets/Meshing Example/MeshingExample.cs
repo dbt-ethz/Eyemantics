@@ -130,7 +130,7 @@ namespace MagicLeap.Examples
             controllerActions.Bumper.performed += OnBumperDown;
             controllerActions.Menu.performed += OnMenuDown;
 
-            MLDevice.GestureSubsystemComponent.onTouchpadGestureChanged += OnTouchpadGestureStart;
+            //MLDevice.GestureSubsystemComponent.onTouchpadGestureChanged += OnTouchpadGestureStart;
         }
 
         /// <summary>
@@ -185,7 +185,7 @@ namespace MagicLeap.Examples
             inputSubsystem.trackingOriginUpdated -= OnTrackingOriginChanged;
 
             if (MLDevice.GestureSubsystemComponent != null)
-                MLDevice.GestureSubsystemComponent.onTouchpadGestureChanged -= OnTouchpadGestureStart;
+                //MLDevice.GestureSubsystemComponent.onTouchpadGestureChanged -= OnTouchpadGestureStart;
 
             mlInputs.Dispose();
         }
@@ -223,6 +223,8 @@ namespace MagicLeap.Examples
         {
             Debug.Log("Bumper Down");
             _meshingVisualizer.SetRenderers();
+            _meshingSubsystemComponent.DestroyAllMeshes();
+            _meshingSubsystemComponent.RefreshAllMeshes();
         }
 
         /// <summary>
@@ -274,17 +276,17 @@ namespace MagicLeap.Examples
         /// </summary>
         /// <param name="controllerId">The id of the controller.</param>
         /// <param name="gesture">The gesture getting started.</param>
-        private void OnTouchpadGestureStart(GestureSubsystem.Extensions.TouchpadGestureEvent touchpadGestureEvent)
-        {
-            if (touchpadGestureEvent.state == GestureState.Started &&
-                touchpadGestureEvent.type == InputSubsystem.Extensions.TouchpadGesture.Type.Swipe &&
-                touchpadGestureEvent.direction == InputSubsystem.Extensions.TouchpadGesture.Direction.Up)
-            {
-                var currentLevel = MeshingSubsystem.Extensions.MLMeshing.DensityToLevelOfDetail(_meshingSubsystemComponent.density);
-                var newLevel = (currentLevel == MeshingSubsystem.Extensions.MLMeshing.LevelOfDetail.Maximum) ? MeshingSubsystem.Extensions.MLMeshing.LevelOfDetail.Minimum : currentLevel + 1;
-                _meshingSubsystemComponent.density = MeshingSubsystem.Extensions.MLMeshing.LevelOfDetailToDensity(newLevel);
-            }
-        }
+        //private void OnTouchpadGestureStart(GestureSubsystem.Extensions.TouchpadGestureEvent touchpadGestureEvent)
+        //{
+        //    if (touchpadGestureEvent.state == GestureState.Started &&
+        //        touchpadGestureEvent.type == InputSubsystem.Extensions.TouchpadGesture.Type.Swipe &&
+        //        touchpadGestureEvent.direction == InputSubsystem.Extensions.TouchpadGesture.Direction.Up)
+        //    {
+        //        var currentLevel = MeshingSubsystem.Extensions.MLMeshing.DensityToLevelOfDetail(_meshingSubsystemComponent.density);
+        //        var newLevel = (currentLevel == MeshingSubsystem.Extensions.MLMeshing.LevelOfDetail.Maximum) ? MeshingSubsystem.Extensions.MLMeshing.LevelOfDetail.Minimum : currentLevel + 1;
+        //        _meshingSubsystemComponent.density = MeshingSubsystem.Extensions.MLMeshing.LevelOfDetailToDensity(newLevel);
+        //    }
+        //}
 
         /// <summary>
         /// Handle in charge of refreshing all meshes if a new session occurs

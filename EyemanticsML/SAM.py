@@ -103,6 +103,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             vector = np.array([vector])
             print(vector)
 
+            if (vector == np.array([[-1 -1]])).all():
+                print("Invalid Gaze Point")
+                break
+
             # Accessing the coordinates from the nested array format
             x_coord = int(vector[0][0])
             y_coord = int(vector[0][1])

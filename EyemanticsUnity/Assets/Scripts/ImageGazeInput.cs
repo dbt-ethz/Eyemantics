@@ -32,6 +32,8 @@ public class ImageGazeInput : MonoBehaviour
     public GameObject gazeDisplayPrefab;
     public float gazeInterval = 0.2f;
     public float imageCaptureInterval = 1f;
+    private List<Vector3> gazePoints = new List<Vector3>(); // List to store gaze points
+
 
     private bool permissionGranted = false;
     private readonly MLPermissions.Callbacks camPermissionCallbacks = new MLPermissions.Callbacks();
@@ -80,16 +82,19 @@ public class ImageGazeInput : MonoBehaviour
     {
         cameraCaptureTime += Time.deltaTime;
         time += Time.deltaTime;
+
+        // Continuously record gaze points
+        EyeTracking();
+
+        // Every 0.2 seconds, calculate median and update sphere
         if (time >= gazeInterval)
         {
             time = 0;
-            EyeTracking();
+            UpdateSpherePositionUsingMedian();
+            gazePoints.Clear(); // Clear the list for next interval
+
+            Debug.Log($"Head Position: {Camera.main.gameObject.transform.position}, Rotation: {Camera.main.gameObject.transform.rotation.eulerAngles}");
         }
-
-        //if (!(TCPServer.mask == null || TCPServer.mask.Length == 0)) {
-        //    Debug.Log("Mask not empty!");
-        //}
-
     }
     private void OnPermissionDenied(string permission)
     {
@@ -204,19 +209,44 @@ public class ImageGazeInput : MonoBehaviour
         }
 
         MLResult gazeStateResult = MLGazeRecognition.GetState(out MLGazeRecognition.State state);
-        MLResult gazeStaticDataResult = MLGazeRecognition.GetStaticData(out MLGazeRecognition.StaticData data);
-
-        //Debug.Log($"MLGazeRecognitionStaticData {gazeStaticDataResult.Result}\n" +
-        //    $"Vergence {data.Vergence}\n" +
-        //    $"EyeHeightMax {data.EyeHeightMax}\n" +
-        //    $"EyeWidthMax {data.EyeWidthMax}\n" +
-        //    $"MLGazeRecognitionState: {gazeStateResult.Result}\n" +
-        //    state.ToString());
-        if (data.Vergence != null)
+        if (gazeStateResult.IsOk)
         {
-            UpdateSphere(data.Vergence);
+            MLResult gazeStaticDataResult = MLGazeRecognition.GetStaticData(out MLGazeRecognition.StaticData data);
+            if (gazeStaticDataResult.IsOk && data.Vergence != null)
+            {
+                // Extract the position component from the Pose
+                Vector3 gazePosition = data.Vergence.position;
+                gazePoints.Add(gazePosition); // Store the gaze position
+            }
         }
     }
+
+    private void UpdateSpherePositionUsingMedian()
+    {
+        if (gazePoints.Count == 0) return;
+
+        // Calculate median of gaze points
+        Vector3 medianGazePoint = CalculateMedianGazePoint(gazePoints);
+
+        // Create a Pose object from the median position with a default rotation
+        Pose medianPose = new Pose(medianGazePoint, Quaternion.identity);
+
+        UpdateSphere(medianPose); // Update the sphere with the median Pose
+    }
+
+    private Vector3 CalculateMedianGazePoint(List<Vector3> points)
+    {
+        // Sort the list based on each axis and find the median
+        points.Sort((a, b) => a.x.CompareTo(b.x));
+        float medianX = points[points.Count / 2].x;
+        points.Sort((a, b) => a.y.CompareTo(b.y));
+        float medianY = points[points.Count / 2].y;
+        points.Sort((a, b) => a.z.CompareTo(b.z));
+        float medianZ = points[points.Count / 2].z;
+
+        return new Vector3(medianX, medianY, medianZ);
+    }
+
     private void UpdateSphere(Pose pos)
     {
         Vector3 init_vec = new Vector3(0f, 0f, 1f);

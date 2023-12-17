@@ -26,12 +26,6 @@ namespace MagicLeap.Examples
     {
 
 
-        [DllImport("UnityMagicLeap", CallingConvention = CallingConvention.Cdecl, EntryPoint = "UnityMagicLeap_SegmentedDimmer_KeepAlpha")]
-
-        private static extern void SetSegmentedDimmerKeepAlpha(bool status);
-
-
-
 
         [SerializeField, Tooltip("The MeshingSubsystemComponent from which to get update on mesh types.")]
         private MeshingSubsystemComponent _meshingSubsystemComponent = null;
@@ -68,8 +62,6 @@ namespace MagicLeap.Examples
         void Awake()
         {
 
-
-            SetSegmentedDimmerKeepAlpha(true);
 
             
             // Validate all required game objects.
