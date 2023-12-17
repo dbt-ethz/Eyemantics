@@ -32,12 +32,13 @@ predictor = SamPredictor(sam)
 
 #IPaddr = input('Input the MagicLeap device IP\n') 
 
-IPaddr = "127.10.000.1" #change this
+IPaddr = "192.168.1.61" #change this
 port = 4350
 
 firstIter = False
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+
     while(True):
         s.connect((IPaddr,port))
         print("connected!")
@@ -103,6 +104,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             vector = np.array([vector])
             print(vector)
 
+            if (vector == np.array([[-1 -1]])).all():
+                print("Invalid Gaze Point")
+                break
+
             # Accessing the coordinates from the nested array format
             x_coord = int(vector[0][0])
             y_coord = int(vector[0][1])
@@ -167,5 +172,5 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.close()
 
 
-            #s.close()
+    
         
