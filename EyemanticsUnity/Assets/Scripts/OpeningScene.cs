@@ -9,22 +9,6 @@ using System.Runtime.InteropServices;
 public class OpeningScene : MonoBehaviour
 {
 
-    [DllImport("UnityMagicLeap", CallingConvention = CallingConvention.Cdecl, EntryPoint = "UnityMagicLeap_SegmentedDimmer_KeepAlpha")]
-
-    private static extern void SetSegmentedDimmerKeepAlpha(bool status);
-
-
-    public OpeningScene ()
-    {
-        SetSegmentedDimmerKeepAlpha(true);
-
-    }
-
-
-    void Awake()
-    {
-        SetSegmentedDimmerKeepAlpha(true);
-    }
 
     public TMP_Text IpAddressText;
     // Start is called before the first frame update

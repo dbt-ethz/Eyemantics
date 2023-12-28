@@ -26,12 +26,6 @@ namespace MagicLeap.Examples
     {
 
 
-        [DllImport("UnityMagicLeap", CallingConvention = CallingConvention.Cdecl, EntryPoint = "UnityMagicLeap_SegmentedDimmer_KeepAlpha")]
-
-        private static extern void SetSegmentedDimmerKeepAlpha(bool status);
-
-
-
 
         [SerializeField, Tooltip("The MeshingSubsystemComponent from which to get update on mesh types.")]
         private MeshingSubsystemComponent _meshingSubsystemComponent = null;
@@ -68,8 +62,6 @@ namespace MagicLeap.Examples
         void Awake()
         {
 
-
-            SetSegmentedDimmerKeepAlpha(true);
 
             
             // Validate all required game objects.
@@ -238,8 +230,9 @@ namespace MagicLeap.Examples
 
                                 //// Initialize Color
                                 //colors[i] = blue;
+                                Quaternion additionalRotation = Quaternion.Euler(2f, 0f, 0f);
 
-                                Vector2 pixelLocation = _imageGazeInput.ViewportPointFromWorld(_imageGazeInput.cameraIntrinsics, vertices[i], cameraPos, cameraRot);
+                                Vector2 pixelLocation = _imageGazeInput.ViewportPointFromWorld(_imageGazeInput.cameraIntrinsics, vertices[i], cameraPos, cameraRot, additionalRotation);
 
                                 if (pixelLocation != errVec)
                                 {
