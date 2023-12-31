@@ -230,7 +230,7 @@ namespace MagicLeap.Examples
 
                                 //// Initialize Color
                                 //colors[i] = blue;
-                                Quaternion additionalRotation = Quaternion.Euler(2f, 0f, 0f);
+                                Quaternion additionalRotation = Quaternion.Euler(0f, 0f, 0f);
 
                                 Vector2 pixelLocation = _imageGazeInput.ViewportPointFromWorld(_imageGazeInput.cameraIntrinsics, vertices[i], cameraPos, cameraRot, additionalRotation);
 
