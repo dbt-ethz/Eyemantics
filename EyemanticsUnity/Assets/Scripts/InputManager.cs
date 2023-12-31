@@ -8,6 +8,9 @@ public class InputManager : MonoBehaviour
     private static ImageGazeInput imageGazeInput;
     private MagicLeapInputs mlInputs;
     private MagicLeapInputs.ControllerActions controllerActions;
+
+    private static float cameraCaptureTime = 0f;
+    private static float imageCaptureInterval = 1f;
     private void Awake()
     {
         mlInputs = new MagicLeapInputs();
@@ -19,13 +22,32 @@ public class InputManager : MonoBehaviour
     {
         imageGazeInput = GameObject.Find("/InputManager").GetComponent<ImageGazeInput>();
     }
+
+    private void Update()
+    {
+
+        cameraCaptureTime += Time.deltaTime;
+    }
+
     private void OnDestroy()
     {
         controllerActions.Trigger.performed -= triggerPress;
     }
     public static void triggerPress(InputAction.CallbackContext context)
     {
+
+        if (cameraCaptureTime < imageCaptureInterval)
+        {
+            return;
+        }
+        cameraCaptureTime = 0;
+
         PopOutInfo.Instance.AddText("trigger press!!");
+        //imageGazeInput.cameraPos.position = Camera.main.gameObject.transform.position;
+        //imageGazeInput.cameraPos.rotation = Camera.main.gameObject.transform.rotation;
+        //TCPServer.mask = null;
+        //Debug.Log($"cam position: {cameraPos.position}\ncam rotation: {cameraPos.rotation.eulerAngles}");
+
         imageGazeInput.ImageCapture();
     }
 }

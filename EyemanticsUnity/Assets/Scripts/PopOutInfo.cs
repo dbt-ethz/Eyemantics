@@ -21,7 +21,7 @@ public class PopOutInfo : MonoBehaviour
             Destroy(Instance.gameObject);
             Instance = this;
         }
-        this.text.text = "default text";
+        this.text.text = "";
         Application.logMessageReceived += HandleLog;
     }
     public void AddText(string newText)
@@ -30,8 +30,8 @@ public class PopOutInfo : MonoBehaviour
         {
             this.text.text = "";
         } 
-        this.text.text += '\n';
-        this.text.text += newText;
+        //this.text.text += '\n';
+        //this.text.text += newText;
     }
     private void HandleLog(string message, string stackTrace, LogType type)
     {
