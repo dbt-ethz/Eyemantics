@@ -90,15 +90,8 @@ public class ImageGazeInput : MonoBehaviour
         {
             time = 0;
             EyeTracking();
-            //UpdateSpherePositionUsingMedian();
             gazePoints.Clear();
-            //Debug.Log($"Position: {Camera.main.gameObject.transform.position}\t Rotation: {Camera.main.gameObject.transform.rotation.eulerAngles}");
         }
-
-        //if (!(TCPServer.mask == null || TCPServer.mask.Length == 0)) {
-        //    Debug.Log("Mask not empty!");
-        //}
-
     }
     private void OnPermissionDenied(string permission)
     {
@@ -165,7 +158,6 @@ public class ImageGazeInput : MonoBehaviour
         }
 
         _captureConfig = new MLCamera.CaptureConfig();
-        //MLCamera.OutputFormat outputFormat = MLCamera.OutputFormat.YUV_420_888;
         MLCamera.OutputFormat outputFormat = MLCamera.OutputFormat.YUV_420_888;
         _captureConfig.CaptureFrameRate = MLCamera.CaptureFrameRate.None;
         _captureConfig.StreamConfigs = new MLCamera.CaptureStreamConfig[1];
@@ -174,7 +166,6 @@ public class ImageGazeInput : MonoBehaviour
     private void SetCameraCallbacks()
     {
         _camera.OnRawImageAvailable += RowImageAvailable;
-        //_camera.OnRawImageAvailable += OnCaptureDataReceived;
     }
     public void ImageCapture()
     {
@@ -199,37 +190,6 @@ public class ImageGazeInput : MonoBehaviour
             }
         }).Start();
     }
-
-    //public void ImageCapture()
-    //{
-    //    if (!permissionGranted)
-    //    {
-    //        return;
-    //    }
-    //    MLResult result = _camera.PrepareCapture(_captureConfig, out MLCamera.Metadata metaData);
-    //    if (result.IsOk)
-    //    {
-    //        //Debug.Log("first result ok!!");
-    //        // Trigger auto exposure and auto white balance
-    //        _camera.PreCaptureAEAWB();
-    //        result = _camera.CaptureImage();
-    //        if (result.IsOk)
-    //        {
-    //            Debug.Log("image captured!!");
-    //            //PopOutInfo.Instance.AddText("image captured!!");
-    //        }
-    //        else
-    //        {
-    //            Debug.LogError("Failed to start image capture!");
-    //            //PopOutInfo.Instance.AddText("Failed to start image capture!");
-    //        }
-    //    }
-    //    //else
-    //    //{
-    //    //    Debug.Log("first result not ok!!");
-    //    //}
-    //}
-
     private void EyeTracking()
     {
         if (!permissionGranted)
@@ -240,15 +200,8 @@ public class ImageGazeInput : MonoBehaviour
         MLResult gazeStateResult = MLGazeRecognition.GetState(out MLGazeRecognition.State state);
         MLResult gazeStaticDataResult = MLGazeRecognition.GetStaticData(out MLGazeRecognition.StaticData data);
 
-        //Debug.Log($"MLGazeRecognitionStaticData {gazeStaticDataResult.Result}\n" +
-        //    $"Vergence {data.Vergence}\n" +
-        //    $"EyeHeightMax {data.EyeHeightMax}\n" +
-        //    $"EyeWidthMax {data.EyeWidthMax}\n" +
-        //    $"MLGazeRecognitionState: {gazeStateResult.Result}\n" +
-        //    state.ToString());
         if (data.Vergence != null)
         {
-            //gazePoints.Add(data.Vergence.position);
             UpdateSphere(data.Vergence.position);
         }
     }
@@ -288,41 +241,23 @@ public class ImageGazeInput : MonoBehaviour
             return;
         }
         cameraCaptureTime = 0;
-        //if (output.Format == MLCamera.OutputFormat.YUV_420_888)
-        //{
-        //UpdateJPGTexture(output.Planes[0]);
-        //}
         MLResult result = MLCVCamera.GetFramePose(extras.VCamTimestamp, out Matrix4x4 cameraTransform);
-        //if (result.IsOk)
-        //{
+
 
 
         cameraPos.position = new Vector3(cameraTransform[0, 3], cameraTransform[1, 3], cameraTransform[2, 3]);
         cameraPos.rotation = cameraTransform.rotation;
 
-        //cameraPos.position = Camera.main.gameObject.transform.position;
-        //cameraPos.rotation = Camera.main.gameObject.transform.rotation;
-        ////TCPServer.mask = null;
         Debug.Log($"cam position: {cameraPos.position}\ncam rotation: {cameraPos.rotation.eulerAngles}");
 
         cameraIntrinsics = extras.Intrinsics.Value;
-        //Debug.Log($"Camera Resolution: {cameraIntrinsics.Width} * {cameraIntrinsics.Height}");
         pixelPos = ViewportPointFromWorld(cameraIntrinsics, gazePoint, cameraPos.position, cameraPos.rotation, Quaternion.identity);
-        //Debug.Log($"image dimention: {captureWidth} * {captureHeight}");
-        //Debug.Log($"gaze pos 2D: {pixelPos}");
-        //}
-        //else
-        //{
-        //    Debug.Log("failed to receive extrinsic!!");
-        //}
 
         ReceiveAndCombineYUV(output, extras, metadataHandle);
 
-        //Debug.Log("Ready to send out img and gaze pos!");
         // Send Image to PC
         if (!TCPServer.communicating)
         {
-            //Debug.Log("called tcpserver");
             TCPServer.communicating = true;
             ThreadStart tc = new ThreadStart(TCPServer.Communication);
             TCPServer.commThread = new Thread(tc);
@@ -343,14 +278,9 @@ public class ImageGazeInput : MonoBehaviour
 
         //combine 3 channels into 1 render texture
         CombineYUVChannels2RGB(output);
-        // render texture to texture 2D
-        //_combinedTexture2D = ToTexture2D(_renderTexture);
         _combinedTexture2D = ExtendedTexureMethod.toTexture2D(_renderTexture);
         bytes = null;
         bytes = _combinedTexture2D.EncodeToJPG();
-        //Debug.Log($"captured image size: {bytes.Length}");
-        //string dataString = bytes.Aggregate(new StringBuilder(), (sb, b) => sb.AppendFormat("{0:x2} ", b), sb => sb.AppendFormat("({0})", bytes.Length).ToString());
-        //SaveBytesArrayLocal(dataString);
     }
     private void UpdateYUVTextureChannel(ref Texture2D channelTexture, MLCamera.PlaneInfo imagePlane, string samplerName, ref byte[] newTexureChannel)
     {
@@ -407,7 +337,6 @@ public class ImageGazeInput : MonoBehaviour
                 _commandBuffer = new CommandBuffer();
                 _commandBuffer.name = "YUV2RGB";
             }
-            //_screenRenderYUV.texture = _renderTexture;
         }
 
         _yuvMaterial.mainTextureScale = new Vector2(1f / output.Planes[0].PixelStride, 1.0f);
@@ -497,8 +426,6 @@ public class ImageGazeInput : MonoBehaviour
 
         // Apply the rotation offset to the point in camera space
         pointInCameraSpace = rotationOffset * pointInCameraSpace;
-
-        //Debug.Log($"3D Point in Camera Space: {pointInCameraSpace}");
 
         // Step 2: Project the point onto the image plane using the camera intrinsics
         if (pointInCameraSpace.z <= 0) // Avoid division by zero
