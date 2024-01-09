@@ -29,13 +29,10 @@ public class TCPServer : MonoBehaviour
     internal static TcpClient client = new TcpClient();
     internal static NetworkStream stream = null;
 
+    // Setting true if mask received
     public static bool newMaskFlag = false;
 
-    // Dummy variables for current use
-    //private byte[] img = File.ReadAllBytes(Application.dataPath + "/Images/IMG_7555.jpg");
-    //private float[] coords = new float[] { 3.11f, 2.23f };
     private static ImageGazeInput imggaze;
-    // Start is called before the first frame update
     public static bool firstIter = true;
 
     void Start()
@@ -59,6 +56,9 @@ public class TCPServer : MonoBehaviour
         
     }
 
+    /// <summary>
+    /// Start server and listen to clients
+    /// </summary>
     public static void Connect()
     {
         IPAddress ipadd = IPAddress.Parse(connectionIP);
@@ -69,16 +69,15 @@ public class TCPServer : MonoBehaviour
         connected = true;
         stream = client.GetStream();
 
-        // TODO: This should be started when image is captured (from CamCapture fct)
-        //ThreadStart tc = new ThreadStart(Communication);
-        //commThread = new Thread(tc);
-        //commThread.Start();
     }
 
+    /// <summary>
+    /// Communicaion pipeline
+    /// </summary>
     public static void Communication()
     {
-        // Make sure communication = true set in CamCapture
-        // communicating = true;
+        // communication = true set in CamCapture
+
         byte[] img = imggaze.bytes;
         Vector2 coordsVec = imggaze.pixelPos;
 
@@ -96,6 +95,11 @@ public class TCPServer : MonoBehaviour
         communicating = false;
     }
 
+    /// <summary>
+    /// Send image and coords data
+    /// </summary>
+    /// <param name="image"></param>
+    /// <param name="coords"></param>
     static void SendData(byte[] image, float[] coords)
     {
 
@@ -117,9 +121,10 @@ public class TCPServer : MonoBehaviour
 
         imageSize = BitConverter.GetBytes(totalLength);
 
+        // Send full length
         stream.Write(imageSize, 0, imageSize.Length);
 
-        // Send image
+        // Send image and coordinates
         int pckSize = 4096;
 
         for(int i = 0; i < fullData.Length; i += pckSize)
@@ -130,33 +135,19 @@ public class TCPServer : MonoBehaviour
             stream.Write(pck,0,pck.Length);
         }
 
-        //// Receive response
-        //byte[] buff = new byte[1024];
-        //int bytesRead = stream.Read(buff, 0, buff.Length);
-        //Debug.Log(Encoding.ASCII.GetString(buff, 0, bytesRead));
-
-
-
-
-        //stream.Write(vectorBytes, 0, vectorBytes.Length);
-
         Debug.Log("Sending Completed");
 
     }
 
+    /// <summary>
+    /// Receive the boolean segmentation mask
+    /// </summary>
     static void ReceiveData()
     {
-        // Receive number rows
-        //byte[] buff_rows = new byte[4];
-        //int bytesRead = stream.Read(buff_rows, 0, buff_rows.Length);
-        //int rows = BitConverter.ToInt32(buff_rows, 0);
-        int bytesRead;
-        //Debug.Log(rows);
 
-        //// Receive number cols
-        //byte[] buff_cols = new byte[4];
-        //bytesRead = stream.Read(buff_cols, 0, buff_cols.Length);
-        //int cols = BitConverter.ToInt32(buff_cols, 0);
+        int bytesRead;
+ 
+        // Since we now the dimension we want to receive, we can facilitate the process
         int rows = 2160;
         int cols = 2880;
         //Debug.Log(cols);
@@ -185,6 +176,10 @@ public class TCPServer : MonoBehaviour
         // printMatrix(mask);
     }
 
+    /// <summary>
+    /// Get local IP address of ML
+    /// </summary>
+    /// <returns></returns>
     public static string GetLocalIPAddress()
     {
         try
@@ -199,6 +194,10 @@ public class TCPServer : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Print Matrix for Debugging
+    /// </summary>
+    /// <param name="mat"></param>
     void printMatrix(bool[][] mat)
     {
         for (int i = 0; i < mat.Length; i++)
