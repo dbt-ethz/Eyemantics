@@ -43,11 +43,6 @@ public class InputManager : MonoBehaviour
         cameraCaptureTime = 0;
 
         PopOutInfo.Instance.AddText("trigger press!!");
-        //imageGazeInput.cameraPos.position = Camera.main.gameObject.transform.position;
-        //imageGazeInput.cameraPos.rotation = Camera.main.gameObject.transform.rotation;
-        //TCPServer.mask = null;
-        //Debug.Log($"cam position: {cameraPos.position}\ncam rotation: {cameraPos.rotation.eulerAngles}");
-
         imageGazeInput.ImageCapture();
     }
 }
