@@ -118,8 +118,6 @@ public class MeshingVisualizer : MonoBehaviour
                 mr.enabled = renderMask;
             }
 
-            Vector2 errVec = new Vector2(-1f, -1f);
-
             UpdateMesh(meshId);
                 
         }
@@ -150,7 +148,6 @@ public class MeshingVisualizer : MonoBehaviour
 
             if (renderMask)
             {
-                double heightThreshold = 0f;
                 var meshFilter = meshGameObject.GetComponent<MeshFilter>();
                 if (meshFilter != null)
                 {
@@ -158,6 +155,7 @@ public class MeshingVisualizer : MonoBehaviour
                     Color[] colors = new Color[vertices.Length];
 
                     Color red = new Color(1f, 0f, 0f, 1f);
+                    Color transparent = new Color(1f, 1f, 1f, 0f);
 
                     if (!(TCPServer.mask == null || TCPServer.mask.Length == 0))
                     {
@@ -183,10 +181,15 @@ public class MeshingVisualizer : MonoBehaviour
                                     }
 
                                 }
-
                             }
                         }
 
+                    } else
+                    {
+                        for (int i = 0; i < vertices.Length; i++)
+                        {
+                            colors[i] = transparent;
+                        }
                     }
 
                     meshFilter.mesh.colors = colors;
